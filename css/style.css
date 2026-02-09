@@ -234,10 +234,14 @@ a:focus {
 
 .project-card {
     background-color: var(--light-navy);
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     padding: 30px;
     transition: var(--transition);
     position: relative;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    display: block;
+    text-decoration: none;
+    color: inherit;
 }
 
 .project-card::before {
@@ -250,7 +254,7 @@ a:focus {
     background: linear-gradient(135deg, var(--green-tint) 0%, transparent 100%);
     opacity: 0;
     transition: var(--transition);
-    border-radius: var(--border-radius);
+    border-radius: 8px;
 }
 
 .project-card:hover::before {
@@ -259,7 +263,7 @@ a:focus {
 
 .project-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px -10px var(--navy-shadow);
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.4), 0 10px 20px -5px rgba(0, 0, 0, 0.2);
 }
 
 .project-content {
@@ -272,27 +276,11 @@ a:focus {
     font-weight: 600;
     color: var(--lightest-slate);
     margin-bottom: 15px;
-}
-
-.project-title a {
-    color: var(--lightest-slate);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.project-title a:hover {
-    color: var(--green);
-}
-
-.external-link {
-    opacity: 0.5;
     transition: var(--transition);
 }
 
-.project-title a:hover .external-link {
-    opacity: 1;
-    transform: translate(4px, -4px);
+.project-card:hover .project-title {
+    color: var(--green);
 }
 
 .project-description {
