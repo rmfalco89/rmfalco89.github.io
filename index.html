@@ -3,184 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Riccardo Marino - Software Engineer specializing in embedded systems, IoT, and automation.">
-    <title>Riccardo Marino | Software Engineer</title>
-    <link rel="stylesheet" href="css/style-v2.css">
+    <title>Riccardo Marino - Software Engineer</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="site-wrapper">
-        <!-- Left Sidebar - Sticky -->
-        <header class="sidebar">
+    <div class="container">
+        <!-- Left Column: Fixed Sidebar -->
+        <aside class="sidebar">
             <div class="sidebar-content">
-                <div class="header-info">
-                    <h1><a href="/">Riccardo Marino</a></h1>
-                    <h2>Software Engineer</h2>
-                    <p class="tagline">I build intelligent systems that bridge hardware and software.</p>
-                    
-                    <!-- Navigation -->
-                    <nav class="main-nav" aria-label="In-page jump links">
-                        <ul>
-                            <li><a href="#about" class="active">
-                                <span class="nav-indicator"></span>
-                                <span class="nav-text">About</span>
-                            </a></li>
-                            <li><a href="#projects">
-                                <span class="nav-indicator"></span>
-                                <span class="nav-text">Projects</span>
-                            </a></li>
-                        </ul>
-                    </nav>
-                </div>
+                <h1 class="name">Riccardo Marino</h1>
+                <h2 class="title">Software Engineer</h2>
+                <p class="tagline">Building innovative solutions for IoT, automation, and smart systems</p>
                 
-                <!-- Social Links -->
-                <ul class="social-links" aria-label="Social media">
-                    <li>
-                        <a href="https://www.linkedin.com/in/rimarino/" target="_blank" aria-label="LinkedIn" title="LinkedIn">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="mailto:rmfalco.89@gmail.com" aria-label="Email" title="Email">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        </a>
-                    </li>
-                </ul>
+                <nav class="nav">
+                    <a href="#about" class="nav-link">
+                        <span class="nav-indicator"></span>
+                        <span class="nav-text">About</span>
+                    </a>
+                    <a href="#projects" class="nav-link">
+                        <span class="nav-indicator"></span>
+                        <span class="nav-text">Projects</span>
+                    </a>
+                    <a href="#contact" class="nav-link">
+                        <span class="nav-indicator"></span>
+                        <span class="nav-text">Contact</span>
+                    </a>
+                </nav>
+                
+                <div class="social-links">
+                    <a href="https://www.linkedin.com/in/rimarino/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                            <rect x="2" y="9" width="4" height="12"></rect>
+                            <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                    </a>
+                    <a href="mailto:rmfalco.89@gmail.com" class="social-link" aria-label="Email">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </a>
+                </div>
             </div>
-        </header>
+        </aside>
         
-        <!-- Main Content - Scrollable -->
-        <main id="content" class="main-content">
+        <!-- Right Column: Scrolling Content -->
+        <main class="content">
             <!-- About Section -->
             <section id="about" class="section">
-                <div class="section-header-sticky">
-                    <h2 class="section-heading">About</h2>
-                </div>
                 <div class="section-content">
-                    <p>I'm a software engineer specializing in <strong>embedded systems</strong>, <strong>IoT automation</strong>, and <strong>full-stack development</strong>. I enjoy working at the intersection of hardware and software, where great engineering meets real-world problem solving.</p>
-                    
-                    <p>Currently focused on building intelligent systems for home automation, with expertise in ESP32/ESP8266 development, Python automation, and Django-based orchestration layers.</p>
-                    
-                    <p>My work spans sump pump monitoring systems with multi-sensor detection, stock evaluation automation that saves 60+ hours/month, and home automation platforms with smart sensor compression and mushroom cultivation control.</p>
-                    
-                    <p>Outside of work, you'll find me optimizing infrastructure, exploring new IoT platforms, or automating things that probably don't need automating.</p>
-                    
-                    <p style="color: var(--green); font-family: var(--font-mono); margin-top: 2rem;">
-                        🤖 Agent-monitored email — I typically respond within minutes
+                    <p class="about-text">
+                        I'm a software engineer specializing in <span class="highlight">IoT systems</span>, 
+                        <span class="highlight">home automation</span>, and <span class="highlight">embedded development</span>. 
+                        I build production-ready solutions that bridge hardware and software, from ESP32 firmware 
+                        to web-based orchestration platforms.
+                    </p>
+                    <p class="about-text">
+                        My work focuses on creating reliable, maintainable systems for real-world applications—whether 
+                        that's automated flood protection, stock market analysis, or smart home control. I believe in 
+                        clean code, thoughtful architecture, and solutions that actually solve problems.
+                    </p>
+                    <p class="about-text">
+                        When I'm not coding, I'm exploring the intersection of software and physical systems, 
+                        automating tedious tasks, and building tools that make daily life more efficient.
                     </p>
                 </div>
             </section>
             
             <!-- Projects Section -->
             <section id="projects" class="section">
-                <div class="section-header-sticky">
-                    <h2 class="section-heading">Things I've Built</h2>
-                </div>
-                <div class="section-content">
-                    <ul class="projects-list">
-                        <!-- Project 1 -->
-                        <li>
-                            <a href="projects/sump-pump-control.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>Sump Pump Manager (SPM)</h3>
-                                    <p>Intelligent dual-pump water management system with multi-sensor detection, adaptive timing, and emergency flood mode. Prevents basement flooding with sophisticated state-machine control and Home Assistant integration.</p>
-                                    <ul class="tech-list">
-                                        <li>ESP32</li>
-                                        <li>C++</li>
-                                        <li>IoT</li>
-                                        <li>Home Assistant</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                        
-                        <!-- Project 2 -->
-                        <li>
-                            <a href="projects/esp-project-template-architecture.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>ESP32 Project Template - Architecture</h3>
-                                    <p>Production-ready IoT foundation with dual-platform support, smart WiFi management, and type-safe configuration. 95% code sharing between ESP32 and ESP8266 with async web server and WebSocket logging.</p>
-                                    <ul class="tech-list">
-                                        <li>ESP32/ESP8266</li>
-                                        <li>PlatformIO</li>
-                                        <li>C++</li>
-                                        <li>WebServer</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                        
-                        <!-- Project 3 -->
-                        <li>
-                            <a href="projects/esp-project-template-ota.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>ESP32 OTA Update System</h3>
-                                    <p>Secure over-the-air firmware updates using GitHub Releases. Features semantic version comparison, watchdog integration, rollback protection, and browser-based manual upload fallback.</p>
-                                    <ul class="tech-list">
-                                        <li>ESP32</li>
-                                        <li>OTA</li>
-                                        <li>GitHub Releases</li>
-                                        <li>TLS</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                        
-                        <!-- Project 4 -->
-                        <li>
-                            <a href="projects/stocks-eval.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>Stock Evaluation Automation</h3>
-                                    <p>Automated fundamental stock analysis based on Phil Town's Rule #1 investing. Scrapes Morningstar, Macrotrends, and Zacks to calculate intrinsic valuations and margin of safety. Saves 60+ hours/month.</p>
-                                    <ul class="tech-list">
-                                        <li>Python</li>
-                                        <li>Selenium</li>
-                                        <li>Docker</li>
-                                        <li>Finance</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                        
-                        <!-- Project 5 -->
-                        <li>
-                            <a href="projects/telegram-utils.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>Telegram Utils</h3>
-                                    <p>Surgical Telegram account cleanup using MTProto API. Bulk contact deletion and chat cleanup with preview-confirm-execute safety flow. Clean async/await patterns with graceful error handling.</p>
-                                    <ul class="tech-list">
-                                        <li>Python</li>
-                                        <li>Telethon</li>
-                                        <li>MTProto</li>
-                                        <li>Async</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                        
-                        <!-- Project 6 -->
-                        <li>
-                            <a href="projects/smarter-home-webserver.html" class="project-card-horizontal">
-                                <div class="project-card-content">
-                                    <h3>SmarterHome Webserver</h3>
-                                    <p>Django-based home automation orchestration layer with Homebridge and Home Assistant integration. Features smart delta compression for sensor data and specialized mushroom growing chamber automation.</p>
-                                    <ul class="tech-list">
-                                        <li>Django</li>
-                                        <li>REST API</li>
-                                        <li>WebSocket</li>
-                                        <li>Home Automation</li>
-                                    </ul>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
+                <h2 class="section-heading">Featured Projects</h2>
+                
+                <div class="projects-grid">
+                    <!-- Project 1: Sump Pump -->
+                    <div class="project-card">
+                        <div class="project-content">
+                            <h3 class="project-title">
+                                <a href="https://github.com/rmfalco89/sump_pump-control" target="_blank" rel="noopener noreferrer">
+                                    Sump Pump Manager
+                                    <svg class="external-link" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </h3>
+                            <p class="project-description">
+                                Intelligent dual-pump water management system for flood prevention. Coordinates two sump pumps 
+                                with multiple sensors, adaptive timing, and Home Assistant integration. Features flood detection, 
+                                temperature monitoring, and over-the-air firmware updates.
+                            </p>
+                            <ul class="project-tags">
+                                <li>C++</li>
+                                <li>ESP32/ESP8266</li>
+                                <li>IoT</li>
+                                <li>Home Assistant</li>
+                                <li>LIDAR</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 2: ESP Project Template -->
+                    <div class="project-card">
+                        <div class="project-content">
+                            <h3 class="project-title">
+                                <a href="https://github.com/rmfalco89/esp-project-template" target="_blank" rel="noopener noreferrer">
+                                    ESP32 Project Template
+                                    <svg class="external-link" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </h3>
+                            <p class="project-description">
+                                Production-ready IoT foundation with 95% code sharing between ESP32 and ESP8266. Includes WiFi 
+                                management, web-based configuration, GitHub-based OTA updates, EEPROM persistence, and comprehensive 
+                                monitoring. Boot loop protection and watchdog integration built-in.
+                            </p>
+                            <ul class="project-tags">
+                                <li>C++</li>
+                                <li>Arduino</li>
+                                <li>PlatformIO</li>
+                                <li>OTA</li>
+                                <li>AsyncWebServer</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 3: SmarterHome Webserver -->
+                    <div class="project-card">
+                        <div class="project-content">
+                            <h3 class="project-title">
+                                <a href="https://github.com/rmfalco89/smarterHome-webserver" target="_blank" rel="noopener noreferrer">
+                                    SmarterHome Webserver
+                                    <svg class="external-link" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </h3>
+                            <p class="project-description">
+                                Django orchestration layer bridging IoT sensors and home automation platforms. Features delta-compressed 
+                                storage, threshold-based automation with hysteresis, Homebridge and Home Assistant integration, and 
+                                specialized mushroom cultivation control with FAE automation.
+                            </p>
+                            <ul class="project-tags">
+                                <li>Python</li>
+                                <li>Django</li>
+                                <li>REST API</li>
+                                <li>WebSocket</li>
+                                <li>Plotly</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 4: Stock Evaluation -->
+                    <div class="project-card">
+                        <div class="project-content">
+                            <h3 class="project-title">
+                                <a href="https://github.com/rmfalco89/stocks_eval" target="_blank" rel="noopener noreferrer">
+                                    Stock Evaluation System
+                                    <svg class="external-link" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </h3>
+                            <p class="project-description">
+                                Automated fundamental stock analysis based on Phil Town's Rule #1 methodology. Scrapes financial data 
+                                from multiple sources, calculates intrinsic valuations, and identifies buying opportunities with margin 
+                                of safety levels. Two-stage Docker architecture for production deployment.
+                            </p>
+                            <ul class="project-tags">
+                                <li>Python</li>
+                                <li>Selenium</li>
+                                <li>BeautifulSoup</li>
+                                <li>Pandas</li>
+                                <li>Docker</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 5: Telegram Utils -->
+                    <div class="project-card">
+                        <div class="project-content">
+                            <h3 class="project-title">
+                                <a href="https://github.com/rmfalco89/telegram-utils" target="_blank" rel="noopener noreferrer">
+                                    Telegram Utils
+                                    <svg class="external-link" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </a>
+                            </h3>
+                            <p class="project-description">
+                                Surgical Telegram account cleanup tools using the MTProto API. Bulk operations for contact deletion 
+                                and chat cleanup with safety-first design: preview, confirmation, batch processing, and graceful error 
+                                handling. Cleans "joined Telegram" spam and contact bloat efficiently.
+                            </p>
+                            <ul class="project-tags">
+                                <li>Python</li>
+                                <li>Telethon</li>
+                                <li>MTProto</li>
+                                <li>asyncio</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </section>
             
-            <!-- Footer -->
-            <footer>
-                <p>Built by Riccardo Marino</p>
+            <!-- Contact Section -->
+            <section id="contact" class="section">
+                <h2 class="section-heading">Get In Touch</h2>
+                <div class="section-content">
+                    <p class="contact-text">
+                        I'm always interested in discussing IoT projects, embedded systems, or automation challenges. 
+                        Whether you have a question about one of my projects or want to collaborate on something new, 
+                        feel free to reach out.
+                    </p>
+                    <p class="contact-text">
+                        My inbox is monitored by an AI agent that responds within minutes during business hours.
+                    </p>
+                    <a href="mailto:rmfalco.89@gmail.com" class="contact-button">Say Hello</a>
+                </div>
+            </section>
+            
+            <footer class="footer">
+                <p>Built with vanilla HTML, CSS, and JavaScript. Inspired by Brittany Chiang's design.</p>
             </footer>
         </main>
     </div>
+    
+    <script src="js/script.js"></script>
 </body>
 </html>
