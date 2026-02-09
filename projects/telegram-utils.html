@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Utils | Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <article>
+        <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        <header>
+            <h1>telegram-utils: Surgical Telegram Account Cleanup</h1>
+            <p class="article-meta"><strong>Repository:</strong> <a href="https://github.com/rmfalco89/telegram-utils" target="_blank">rmfalco89/telegram-utils</a></p>
+        </header>
+        <div class="content">
+            
+<strong>Repository:</strong> <a href="https://github.com/rmfalco89/telegram-utils" target="_blank">rmfalco89/telegram-utils</a>
+<strong>Tech Stack:</strong> Python, Telethon (MTProto API), asyncio
+<strong>Problem Space:</strong> Bulk operations on Telegram accounts that the official client makes tedious
+<p>---</p>
+<h2>The Problem</h2>
+<p>Telegram's official clients are optimized for messaging, not account maintenance. Common cleanup tasks become painful:</p>
+<ul>
+<li><strong>Contact bloat:</strong> Telegram syncs your entire phone contact book. Removing hundreds of contacts means tapping each one individually.</li>
+<li><strong>Chat spam:</strong> Every time a contact joins Telegram, you get a service message chat. These pile up into dozens of meaningless conversations.</li>
+<li><strong>No bulk actions:</strong> The UI doesn't provide batch operations for these scenarios.</li>
+</ul>
+<p>This repo solves these annoyances with two focused Python scripts that use Telegram's MTProto API to perform bulk deletions safely.</p>
+<p>---</p>
+<h2>Architecture Overview</h2>
+<h3>Why MTProto?</h3>
+<p>The scripts use <strong>Telethon</strong>, a pure-Python MTProto client, instead of the Bot API. Key advantages:</p>
+<p>1. <strong>User account access:</strong> Bot API can't manage contacts or personal dialogs</p>
+<p>2. <strong>Full API surface:</strong> Direct access to <code>contacts.deleteContacts</code>, <code>messages.deleteHistory</code></p>
+<p>3. <strong>No bot middleman:</strong> Operates as your account, not through a separate bot entity</p>
+<h3>Authentication Flow</h3>
+<pre><code>client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+<p>await client.start(phone=phone)</code></pre></p>
+<strong>Session persistence</strong> is handled elegantly:
+<ul>
+<li>First run: phone → 2FA code → local <code>.session</code> file created</li>
+<li>Subsequent runs: <code>.session</code> file reused, no re-authentication</li>
+<li>Security: Session files are equivalent to auth tokens—kept local, never shared</li>
+</ul>
+<p>This avoids the friction of re-authenticating on every run while maintaining security through file permissions.</p>
+<p>---</p>
+<h2>Implementation Deep Dive</h2>
+<h3>1. <code>delete_contacts.py</code> — Contact List Purge</h3>
+<strong>Core API call:</strong>
+<pre><code>result = await client(GetContactsRequest(hash=0))
+<p>contacts = result.users</p>
+<p>input_users = [</p>
+<p>InputUser(user_id=contact.id, access_hash=contact.access_hash)</p>
+<p>for contact in contacts</p>
+<p>if contact.access_hash</p>
+<p>]</p>
+<p>await client(DeleteContactsRequest(id=input_users))</code></pre></p>
+<strong>Key patterns:</strong>
+<ul>
+<li><strong>Access hash validation:</strong> Only processes contacts with valid <code>access_hash</code> to avoid API errors</li>
+<li><strong>Batch processing:</strong> Deletes in chunks of 100 to respect Telegram's rate limits</li>
+<li><strong>Preview before destruction:</strong> Shows first 5 contacts, requires explicit <code>DELETE</code> confirmation</li>
+<li><strong>Progress reporting:</strong> Live count during deletion (<code>Deleted 250/847</code>)</li>
+</ul>
+<strong>Interesting quirk:</strong> The script converts <code>User</code> objects to <code>InputUser</code> objects. This is an MTProto requirement—many write operations need the stripped-down <code>InputX</code> types instead of full entities.
+<h3>2. <code>delete_chats.py</code> — Dialog Cleanup with Modes</h3>
+<strong>Three operational modes:</strong>
+<p>1. <strong>Default (<code>joined</code>):</strong> Deletes "joined Telegram" service messages + near-empty chats</p>
+<p>2. <strong><code>--empty-only</code>:</strong> Any chat with ≤1 message gets deleted</p>
+<p>3. <strong><code>--all</code>:</strong> Nuclear option—deletes everything including groups/channels</p>
+<strong>Detection logic for "joined" chats:</strong>
+<pre><code>is_joined_chat = False
+<p>if dialog.message and isinstance(dialog.message, MessageService):</p>
+<p>if isinstance(dialog.message.action, MessageActionContactSignUp):</p>
+<p>is_joined_chat = True</code></pre></p>
+<p>This pattern-matches Telegram's internal service message type for contact sign-ups. It's more reliable than string matching on message text.</p>
+<strong>Deletion is two-phase:</strong>
+<pre><code><h1>1. Clear history</h1>
+<p>await client(DeleteHistoryRequest(</p>
+<p>peer=entity,</p>
+<p>max_id=0,</p>
+<p>just_clear=False,</p>
+<p>revoke=False  # Don't delete for others</p>
+<p>))</p>
+<h1>2. Leave the dialog</h1>
+<p>await client.delete_dialog(entity)</code></pre></p>
+<p>The <code>revoke=False</code> parameter is crucial—it only clears your side of the history, preserving messages for other participants. This is the right default for a cleanup tool.</p>
+<p>---</p>
+<h2>Safety & UX Design</h2>
+<p>Both scripts implement a <strong>progressive disclosure</strong> safety model:</p>
+<h3>1. Preview → Confirm → Execute</h3>
+<pre><code>Found 847 contacts.
+<p>Preview (first 5):</p>
+<p>1. Alice Smith (@alice)</p>
+<p>2. Bob Jones (no username)</p>
+<p>...</p>
+<p>⚠️  WARNING: This will delete ALL 847 contacts!</p>
+<p>Type 'DELETE' to confirm: _</code></pre></p>
+<p>The <code>DELETE</code> confirmation requirement forces a moment of reflection before destructive operations. It's intentionally harder than just <code>y/n</code>.</p>
+<h3>2. Graceful Failure Handling</h3>
+<pre><code>for item in to_delete:
+<p>try:</p>
+<p>await client(DeleteHistoryRequest(...))</p>
+<p>deleted_count += 1</p>
+<p>except Exception as e:</p>
+<p>errors.append(f"Failed: {item['name']} - {str(e)}")</p>
+<p># Continue processing</code></pre></p>
+<p>Errors don't abort the entire run. The script logs failures and continues, then summarizes errors at the end. This prevents one API hiccup from blocking cleanup of 500+ chats.</p>
+<h3>3. Informative Progress</h3>
+<pre><code>Deleting 127 chats...
+<p>✓ Deleted: John Doe joined Telegram (1/127)</p>
+<p>✓ Deleted: Empty Chat (2/127)</p>
+<p>✗ Failed: Group XYZ - FloodWaitError</p>
+<p>...</code></pre></p>
+<p>Real-time feedback with visual indicators (✓/✗) makes long-running operations less opaque.</p>
+<p>---</p>
+<h2>Code Quality Observations</h2>
+<h3>The Good</h3>
+<p>1. <strong>Documentation-first approach:</strong> Comprehensive docstrings, README with troubleshooting, inline comments explaining API quirks</p>
+<p>2. <strong>Error messages guide users:</strong> <code>Get credentials from: https://my.telegram.org/apps</code> appears in error output</p>
+<p>3. <strong>CLI flexibility:</strong> Phone number can be passed as arg or prompted interactively</p>
+<p>4. <strong>Minimal dependencies:</strong> Just <code>telethon>=1.42.0</code>, no bloat</p>
+<h3>Interesting Choices</h3>
+<strong>Why batch size of 100?</strong>
+<pre><code>BATCH_SIZE = 100</code></pre>
+<p>This isn't documented in code, but Telegram's API has undocumented rate limits. 100 is a conservative value that balances throughput with avoiding <code>FloodWaitError</code>. Through empirical testing, smaller batches (50) are safer for flood-prone operations.</p>
+<strong>Why <code>hash=0</code> in GetContactsRequest?</strong>
+<pre><code>result = await client(GetContactsRequest(hash=0))</code></pre>
+<p>The <code>hash</code> parameter is for incremental sync—passing <code>0</code> forces a full fetch. For a one-shot cleanup script, this is correct. A monitoring tool would cache the hash and use it to detect changes efficiently.</p>
+<p>---</p>
+<h2>Potential Enhancements</h2>
+<p>While the scripts work well, a few extensions could add value:</p>
+<p>1. <strong>Dry-run mode:</strong> <code>--dry-run</code> flag to preview without deleting</p>
+<p>2. <strong>Selective deletion:</strong> <code>--pattern</code> to delete contacts matching a regex</p>
+<p>3. <strong>Export before delete:</strong> Save contact list to JSON/CSV before purging</p>
+<p>4. <strong>Interactive mode:</strong> Prompt yes/no for each chat instead of bulk confirmation</p>
+<p>5. <strong>Undo buffer:</strong> Keep deleted contact IDs in a file for easy re-adding</p>
+<p>The current implementation prioritizes simplicity over features—a valid choice for a personal utility.</p>
+<p>---</p>
+<h2>Technical Takeaways</h2>
+<h3>1. Telethon's Async Model is Clean</h3>
+<p>The library fully embraces Python's async/await:</p>
+<pre><code>async def main():
+<p>client = TelegramClient(...)</p>
+<p>await client.start()</p>
+<p>result = await client(GetContactsRequest(...))</code></pre></p>
+<p>No callbacks, no threading complexity. The API feels natural for I/O-bound operations.</p>
+<h3>2. MTProto Type System is Strict</h3>
+<p>You can't just pass a <code>User</code> object to <code>DeleteContactsRequest</code>. You need <code>InputUser</code>. This adds boilerplate but prevents subtle bugs from mismatched entity types.</p>
+<h3>3. Session Management is Opaque but Reliable</h3>
+<p>The <code>.session</code> file format is SQLite-based but encrypted. Telethon handles all the complexity:</p>
+<ul>
+<li>Stores auth keys, server salts, datacenter IPs</li>
+<li>Persists entity cache to avoid re-fetching user data</li>
+<li>Auto-migrates between library versions</li>
+</ul>
+<p>This is abstraction done right—power users never need to touch it, but it's a regular file they can delete to force re-auth.</p>
+<h3>4. Error Handling Requires MTProto Knowledge</h3>
+<pre><code>except FloodWaitError as e:
+<p>print(f"Rate limited. Wait {e.seconds} seconds.")</code></pre></p>
+<p>Telegram's errors (FloodWait, SessionPasswordNeeded, PhoneMigrate) don't map 1:1 to HTTP status codes. You need to understand the protocol to handle them gracefully. The scripts do minimal error handling—a production tool would need more.</p>
+<p>---</p>
+<h2>Use Cases & Impact</h2>
+<p>Who benefits from this?</p>
+<ul>
+<li><strong>Privacy-conscious users:</strong> Clear Telegram's auto-synced contact list after disabling sync permissions</li>
+<li><strong>Account hoarders:</strong> People with 500+ "joined Telegram" chats who don't want to tap "Delete" for an hour</li>
+<li><strong>Fresh-start seekers:</strong> Nuke all chats when switching to a new Telegram account workflow</li>
+<li><strong>Developers:</strong> Reference implementation for Telethon-based account automation</li>
+</ul>
+<p>The scripts fill a genuine gap. Telegram's UI is optimized for incremental actions (chat one-by-one), not bulk cleanup. These tools respect the platform's rate limits while automating the tedium.</p>
+<p>---</p>
+<h2>Why This Code Matters</h2>
+<code>telegram-utils</code> is a masterclass in <strong>focused utility design:</strong>
+<p>✅ <strong>Solves a real problem</strong> — Addresses actual pain points, not hypothetical use cases</p>
+<p>✅ <strong>Safe by default</strong> — Preview, confirm, batch, handle errors gracefully</p>
+<p>✅ <strong>Well-documented</strong> — README covers setup, usage, troubleshooting, and API references</p>
+<p>✅ <strong>Minimal surface area</strong> — Two scripts, one dependency, no framework bloat</p>
+<p>✅ <strong>Teachable codebase</strong> — Clean async patterns, good variable names, logical flow</p>
+<p>This is how personal automation tools should be built: sharp, safe, and to the point.</p>
+<p>---</p>
+<h2>Running It Yourself</h2>
+<pre><code>git clone git@github.com:rmfalco89/telegram-utils.git
+<p>cd telegram-utils</p>
+<p>pip install -r requirements.txt</p>
+<h1>Get API credentials from https://my.telegram.org/apps</h1>
+<p>export TELEGRAM_API_ID="your_id"</p>
+<p>export TELEGRAM_API_HASH="your_hash"</p>
+<h1>Delete all contacts</h1>
+<p>python delete_contacts.py</p>
+<h1>Delete "joined Telegram" chats</h1>
+<p>python delete_chats.py</p>
+<h1>Nuclear option (careful!)</h1>
+<p>python delete_chats.py --all</code></pre></p>
+<strong>Pro tip:</strong> Run <code>--empty-only</code> first to test, then escalate to default mode once comfortable.
+<p>---</p>
+<h2>Conclusion</h2>
+<p>Sometimes the best code is boring code that just works. <code>telegram-utils</code> doesn't introduce novel algorithms or showcase cutting-edge frameworks. It wraps Telegram's API in a safety harness and gets out of your way.</p>
+<p>The value is in the <strong>craft:</strong></p>
+<ul>
+<li>Understanding the problem deeply (bulk cleanup)</li>
+<li>Choosing the right tool (MTProto, not Bot API)</li>
+<li>Building safety rails (preview, confirm, batch)</li>
+<li>Writing docs that answer real questions</li>
+</ul>
+<p>If you've ever stared at 200 "joined Telegram" chats, you'll appreciate this repo. And if you're building CLI tools, you'll steal its patterns.</p>
+<strong>Final rating:</strong> ⭐⭐⭐⭐⭐
+<em>Solves the problem, respects the user, teaches by example.</em>
+        </div>
+    </article>
+</body>
+</html>

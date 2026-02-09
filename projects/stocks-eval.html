@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Evaluation Automation | Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <article>
+        <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        <header>
+            <h1>Stock Evaluation Automation System</h1>
+            <p class="article-meta"><strong>Repository:</strong> <a href="https://github.com/rmfalco89/stocks_eval" target="_blank">rmfalco89/stocks_eval</a></p>
+        </header>
+        <div class="content">
+            
+<strong>Repository:</strong> <a href="https://github.com/rmfalco89/stocks_eval" target="_blank">rmfalco89/stocks_eval</a>
+<strong>Tech Stack:</strong> Python, Selenium, BeautifulSoup, Pandas, Poetry
+<strong>Purpose:</strong> Automated fundamental stock analysis based on Phil Town's "Rule #1" investment methodology
+<p>---</p>
+<h2>The Problem</h2>
+<p>Value investing requires rigorous fundamental analysis — calculating growth rates, debt ratios, intrinsic valuations, and margin of safety levels. For a single stock, this means:</p>
+<ul>
+<li><strong>Manual data collection</strong> from multiple financial websites (Morningstar, Macrotrends, Zacks)</li>
+<li><strong>Calculating the "Big 5" metrics:</strong> Equity, EPS, Sales, Cash Flow growth rates + ROIC/ROE</li>
+<li><strong>Computing sticker price:</strong> Intrinsic value based on future EPS projections and historical PE ratios</li>
+<li><strong>Determining margin of safety levels:</strong> 20%, 30%, 40%, and 50% discounts from intrinsic value</li>
+<li><strong>Tracking dozens of stocks</strong> to identify buying opportunities</li>
+</ul>
+<p>Doing this manually for even a small watch list of 30-50 stocks is time-prohibitive. And financial data sources impose aggressive rate limits, making bulk scraping unreliable.</p>
+<p>---</p>
+<h2>The Solution</h2>
+<strong>stocks_eval</strong> is a Python automation framework that:
+<p>1. <strong>Scrapes financial data</strong> from multiple sources using intelligent web automation</p>
+<p>2. <strong>Implements Phil Town's Rule #1 calculations</strong> for intrinsic valuation</p>
+<p>3. <strong>Processes entire watch lists</strong> in batch mode with caching and rate-limit evasion</p>
+<p>4. <strong>Generates actionable reports</strong> identifying stocks trading below their margin of safety</p>
+<p>5. <strong>Supports Docker deployment</strong> with a two-stage architecture for production use</p>
+<p>The system transforms hours of manual analysis into a single command that delivers email reports with buy recommendations.</p>
+<p>---</p>
+<h2>Architecture</h2>
+<h3>Three-Tier Data Flow</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+<p>│  Data Gathering Layer (Modular Web Scrapers)                │</p>
+<p>├─────────────────────────────────────────────────────────────┤</p>
+<p>│  • MorningstarGatherer    → Balance sheet, income, cash flow│</p>
+<p>│  • MacrotrendsGatherer    → Historical ratios & trends      │</p>
+<p>│  • PriceGatherer (yfinance) → Current stock prices          │</p>
+<p>│  • ZacksGatherer          → Analyst earnings estimates      │</p>
+<p>└─────────────────────────────────────────────────────────────┘</p>
+<p>↓</p>
+<p>┌─────────────────────────────────────────────────────────────┐</p>
+<p>│  Analysis Engine (DataAnalyzer)                             │</p>
+<p>├─────────────────────────────────────────────────────────────┤</p>
+<p>│  • Parse & normalize financial data from multiple sources   │</p>
+<p>│  • Calculate Big 5 growth rates (8-10 year historical)      │</p>
+<p>│  • Compute sticker price using future value formulas        │</p>
+<p>│  • Calculate 4 margin of safety levels (20-50% discounts)   │</p>
+<p>│  • Score data quality based on historical coverage          │</p>
+<p>└─────────────────────────────────────────────────────────────┘</p>
+<p>↓</p>
+<p>┌─────────────────────────────────────────────────────────────┐</p>
+<p>│  Reporting Layer                                            │</p>
+<p>├─────────────────────────────────────────────────────────────┤</p>
+<p>│  • TSV files: raw data, Big 5 metrics, valuations           │</p>
+<p>│  • Human-readable text reports                              │</p>
+<p>│  • JSON exports for programmatic consumption                │</p>
+<p>│  • Email delivery via Gmail SMTP or system mail             │</p>
+<p>└─────────────────────────────────────────────────────────────┘</code></pre></p>
+<h3>Two-Stage Docker Pattern</h3>
+<p>To avoid rate-limiting issues in production:</p>
+<strong>Stage 1: Data Gatherer</strong> (run weekly)
+<ul>
+<li>Performs web scraping using Selenium + undetected-chromedriver</li>
+<li>Saves data to TSV files</li>
+<li>Heavy on I/O, minimizes API calls</li>
+</ul>
+<strong>Stage 2: Stock Analyzer</strong> (run daily/hourly)
+<ul>
+<li>Reads pre-existing TSV files</li>
+<li>Fetches current prices only (lightweight)</li>
+<li>Performs analysis and sends reports</li>
+<li>No rate-limit concerns</li>
+</ul>
+<p>This separation allows frequent analysis with minimal scraping exposure.</p>
+<p>---</p>
+<h2>Key Technical Features</h2>
+<h3>1. <strong>Rate-Limit Evasion via Intelligent Caching</strong></h3>
+<pre><code>class DataGatherer:
+<p>def __init__(self, name, base_url, ticker, no_cache,</p>
+<p>rate_limit=60, interval=60, max_threads=2,</p>
+<p>disable_js=False, headless=True):</p>
+<p>self.scraper = WebScraper(</p>
+<p>cache_dir=f"cached_pages/{self.name}/{ticker}",</p>
+<p>rate_limit=rate_limit,</p>
+<p>rate_interval=interval,</p>
+<p>...</p>
+<p>)</code></pre></p>
+<ul>
+<li><strong>Page-level caching:</strong> HTML responses stored locally in <code>cached_pages/</code></li>
+<li><strong>Configurable TTL:</strong> Avoids re-scraping unless explicitly invalidated with <code>--no-cache</code></li>
+<li><strong>Per-source rate limiting:</strong> Morningstar set to 1 request/60 seconds</li>
+</ul>
+<h3>2. <strong>Selenium Automation with undetected-chromedriver</strong></h3>
+<p>Morningstar dynamically loads data via JavaScript and has anti-bot protections:</p>
+<pre><code>from data_gatherers import DataGatherer
+<p>class Morningstar(DataGatherer):</p>
+<p>def get_key_metrics(self):</p>
+<p>url = f"{self.base_url}/stocks/{self.market}/{self.ticker}/key-metrics"</p>
+<p>page_source, driver = self.scraper.get_page_content(</p>
+<p>url,</p>
+<p>actions=[</p>
+<p>{</p>
+<p>"type": "xpath_click",</p>
+<p>"xpath": '//*[@id="keyMetrics10years"]',</p>
+<p>"wait_seconds": 2,</p>
+<p>}</p>
+<p>],</p>
+<p>return_driver=True,</p>
+<p>)</code></pre></p>
+<ul>
+<li><strong>Click automation:</strong> Programmatically triggers "10 Years" button to expand historical data</li>
+<li><strong>Headless mode:</strong> Runs without GUI for server deployment</li>
+<li><strong>undetected-chromedriver:</strong> Bypasses basic anti-automation detection</li>
+</ul>
+<h3>3. <strong>Rule #1 Sticker Price Calculation</strong></h3>
+<p>Phil Town's method calculates intrinsic value based on:</p>
+<p>1. <strong>Future EPS:</strong> Projected 10 years out using analyst estimates or historical growth</p>
+<p>2. <strong>Future PE ratio:</strong> Conservative estimate based on historical PE (capped at 2x growth rate)</p>
+<p>3. <strong>Present value discount:</strong> What you'd pay today for that future value</p>
+<pre><code>def calculate_sticker_price(self):
+<p>"""</p>
+<p>Sticker Price = FV(rate, nper, 0, -current_eps) * future_pe</p>
+<p>where rate = expected_eps_growth_rate</p>
+<p>nper = 10 years</p>
+<p>"""</p>
+<p>expected_eps_growth_rate = self.get_expected_eps_growth_rate()</p>
+<p>future_pe = min(2 <em> expected_eps_growth_rate </em> 100, self.get_average_pe())</p>
+<p>current_eps = self.data["ms_income_statement"].iloc[0]["EPS"]</p>
+<p>future_eps = fv(expected_eps_growth_rate, 10, 0, -current_eps)</p>
+<p>future_value = future_eps * future_pe</p>
+<p># Discount back to present at minimum acceptable return (15%)</p>
+<p>sticker_price = pv(0.15, 10, 0, future_value)</p>
+<p>return sticker_price</code></pre></p>
+<p>This conservative approach ensures a margin of safety before purchase.</p>
+<h3>4. <strong>Multi-Source Data Aggregation</strong></h3>
+<p>Different sources provide different data quality:</p>
+<p>| Source       | Best For                          | Issues                          |</p>
+<p>|--------------|-----------------------------------|---------------------------------|</p>
+<p>| Morningstar  | Primary financials (10yr history) | Aggressive rate limits          |</p>
+<p>| Macrotrends  | Historical PE ratios & trends     | Less reliable scraping targets  |</p>
+<p>| yfinance     | Current prices                    | No historical fundamentals      |</p>
+<p>| Zacks        | Analyst earnings estimates        | Paywall on some data            |</p>
+<p>The analyzer cross-validates and fills gaps:</p>
+<pre><code>def prepare_data(self):
+<p>ms_data = self.raw_data.get("morningstar", {})</p>
+<p>mt_data = self.raw_data.get("macrotrend", {})</p>
+<p>zacks_data = self.raw_data.get("zacks", {})</p>
+<p>self.data["ms_balance_sheet"] = ms_data.get("balance_sheet", None)</p>
+<p>self.data["mt_pe_ratio_df"] = mt_data.get("pe_ratio", None)</p>
+<p>self.data["zacks_eps_growth"] = zacks_data.get("eps_growth", None)</p>
+<p># ... merge and normalize</code></pre></p>
+<h3>5. <strong>Batch Processing with Buy Opportunity Detection</strong></h3>
+<p>The batch analyzer processes entire watch lists and ranks stocks by discount:</p>
+<pre><code>poetry run python batch_analyzer.py \
+<p>--watch-list watch_list.yaml \</p>
+<p>--email-to user@example.com</code></pre></p>
+<strong>Sample output:</strong>
+<pre><code>BUY OPPORTUNITIES (Current price below MOS):
+<p>--------------------------------------------------</p>
+<p>AVGO   (mos_20) - $ 283.34 vs $ 304.07 (  6.8% below target)</p>
+<p>NVDA   (mos_30) - $ 612.00 vs $ 680.50 ( 10.1% below target)</code></pre></p>
+<p>Stocks are automatically flagged if trading below their 20%/30%/40%/50% margin of safety levels.</p>
+<h3>6. <strong>Data Quality Scoring</strong></h3>
+<p>Not all stocks have complete 10-year histories. The analyzer scores data quality:</p>
+<pre><code>def calculate_data_quality_score(self):
+<p>"""</p>
+<p>Score based on:</p>
+<ul>
+<li>Historical data coverage (years available)</li>
+<li>Completeness of Big 5 metrics</li>
+<li>Presence of analyst estimates</li>
+</ul>
+<p>"""</p>
+<p>score = 0.0</p>
+<p># Check years of data (max 10)</p>
+<p>if self.data["ms_income_statement"] is not None:</p>
+<p>years = len(self.data["ms_income_statement"].columns)</p>
+<p>score += min(years / 10.0, 1.0) * 0.5</p>
+<p># Check Big 5 completeness</p>
+<p>big_5_metrics = ["equity", "eps", "revenue", "freeCashFlow", "roi"]</p>
+<p>available = sum(1 for m in big_5_metrics if self.has_metric(m))</p>
+<p>score += (available / len(big_5_metrics)) * 0.3</p>
+<p># Check analyst estimates</p>
+<p>if self.data["zacks_eps_growth"] is not None:</p>
+<p>score += 0.2</p>
+<p>return score</code></pre></p>
+<p>Scores below 0.5 warn that analysis may be unreliable.</p>
+<p>---</p>
+<h2>Interesting Implementation Details</h2>
+<h3>BeautifulSoup Table Parsing with Flexible Selectors</h3>
+<p>Morningstar's tables use varying attributes across pages:</p>
+<pre><code>def extract_data(self, page_source, table_selectors):
+<p>soup = BeautifulSoup(page_source, "html.parser")</p>
+<p>data_frames = {}</p>
+<p>for table_name, selector in table_selectors.items():</p>
+<p># Try direct table match</p>
+<p>table = soup.find("table", selector)</p>
+<p># If not found, search wrapper then find table inside</p>
+<p>if not table:</p>
+<p>wrapper = soup.find(attrs=selector)</p>
+<p>if wrapper:</p>
+<p>table = wrapper.find("table")</p>
+<p># Extract headers and rows...</code></pre></p>
+<p>This two-pass approach handles both direct <code><table></code> elements and nested structures.</p>
+<h3>Watch List YAML Configuration</h3>
+<p>Clean declarative format for managing portfolios:</p>
+<pre><code>stocks:
+<ul>
+<li>ticker: "AAPL"</li>
+</ul>
+<p>name: "Apple Inc."</p>
+<p>earnings_estimate: "UNK"</p>
+<ul>
+<li>ticker: "NVDA"</li>
+</ul>
+<p>name: "NVIDIA Corporation"</p>
+<ul>
+<li>ticker: "BRK.B"</li>
+</ul>
+<p>name: "Berkshire Hathaway Inc."</p>
+<p>market: "xnys"  # NYSE instead of default NASDAQ</code></pre></p>
+<p>Supports manual earnings estimate overrides when analyst data is unavailable.</p>
+<h3>Gmail SMTP with Fallback to System Mail</h3>
+<p>Email reports attempt Gmail first, then fall back to local <code>mail</code> command:</p>
+<pre><code>def send_email_report(self, recipient_email, report_text):
+<p>if self._send_via_gmail(recipient_email, report_text):</p>
+<p>return True</p>
+<p>logger.info("Gmail SMTP failed, trying system mail...")</p>
+<p>return self._send_via_system_mail(recipient_email, report_text)</code></pre></p>
+<p>This ensures reports always reach the user, even in restricted environments.</p>
+<h3>Custom Financial Functions (FV/PV)</h3>
+<p>Since the project avoids heavy Excel-like dependencies, it implements NumPy-style financial formulas:</p>
+<pre><code>def fv(rate, nper, pmt, pv=0, type=0):
+<p>"""Future value of an investment."""</p>
+<p>if rate == 0:</p>
+<p>return -(pv + pmt * nper)</p>
+<p>else:</p>
+<p>return -(</p>
+<p>pv <em> (1 + rate) </em>* nper</p>
+<p>+ pmt <em> (1 + rate </em> type) <em> ((1 + rate) </em>* nper - 1) / rate</p>
+<p>)</p>
+<p>def pv(rate, nper, pmt, fv=0, type=0):</p>
+<p>"""Present value of an investment."""</p>
+<p># ... symmetric implementation</code></pre></p>
+<p>These mirror Excel's <code>FV()</code> and <code>PV()</code> functions used in financial modeling.</p>
+<p>---</p>
+<h2>Deployment & Usage</h2>
+<h3>Single Stock Analysis</h3>
+<pre><code>poetry run python src/eval_stock.py \
+<p>--ticker AAPL \</p>
+<p>--market xnas \</p>
+<p>--earnings-estimate 0.15</code></pre></p>
+<h3>Batch Analysis (All Watch List Stocks)</h3>
+<pre><code>poetry run python batch_analyzer.py \
+<p>--watch-list watch_list.yaml \</p>
+<p>--email-to investor@example.com \</p>
+<p>--output-json results.json</code></pre></p>
+<h3>Two-Stage Docker Workflow</h3>
+<pre><code><h1>Weekly: gather all data (rate-limited scraping)</h1>
+<p>docker-compose run data-gatherer</p>
+<h1>Daily: analyze + email report (no scraping)</h1>
+<p>docker-compose up stock-analyzer</code></pre></p>
+<h3>Cron Scheduling</h3>
+<pre><code><h1>Run analysis daily at 6 PM</h1>
+<p>0 18 <em> </em> * cd ~/stocks_eval && poetry run python batch_analyzer.py \</p>
+<p>--email-to rmfalco89@gmail.com</code></pre></p>
+<p>---</p>
+<h2>Key Takeaways</h2>
+<h3>What Makes This Interesting</h3>
+<p>1. <strong>Domain-specific automation:</strong> Implements a published investment methodology (Rule #1) in code</p>
+<p>2. <strong>Rate-limit resilience:</strong> Two-stage architecture + caching system for production reliability</p>
+<p>3. <strong>Multi-source data fusion:</strong> Combines web scraping, APIs, and manual overrides</p>
+<p>4. <strong>Practical value investing:</strong> Turns hours of spreadsheet work into automated buy signals</p>
+<h3>Technical Highlights</h3>
+<ul>
+<li><strong>Selenium + undetected-chromedriver</strong> for anti-bot evasion</li>
+<li><strong>Modular scraper architecture</strong> with extensible data gatherer classes</li>
+<li><strong>BeautifulSoup flexible parsing</strong> handling varying HTML structures</li>
+<li><strong>Docker-ready two-stage pipeline</strong> separating heavy scraping from lightweight analysis</li>
+<li><strong>Financial formula implementation</strong> (FV/PV) without Excel dependencies</li>
+</ul>
+<h3>Real-World Impact</h3>
+<p>For serious value investors managing a 30-50 stock watch list:</p>
+<ul>
+<li><strong>Manual time:</strong> ~2 hours per stock × 30 stocks = 60 hours/month</li>
+<li><strong>Automated time:</strong> 5 minutes for initial setup + 30 seconds per run</li>
+<li><strong>ROI:</strong> Hundreds of hours saved annually while maintaining analytical rigor</li>
+</ul>
+<p>This is a perfect example of using software engineering to solve a real personal finance problem — automating tedious calculations while preserving the discipline of fundamental analysis.</p>
+<p>---</p>
+<strong>Last Updated:</strong> February 2026
+<strong>Portfolio Category:</strong> Financial Automation, Web Scraping, Data Analysis
+        </div>
+    </article>
+</body>
+</html>

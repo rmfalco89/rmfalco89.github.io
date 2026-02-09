@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 OTA Update System | Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <article>
+        <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        <header>
+            <h1>Building a Secure OTA Update System for ESP32/ESP8266</h1>
+            
+        </header>
+        <div class="content">
+            
+<strong>GitHub Repository:</strong> <a href="https://github.com/rmfalco89/esp-project-template" target="_blank">rmfalco89/esp-project-template</a>
+<strong>Focus:</strong> GitHub-based OTA firmware updates with rollback protection
+<strong>Platform:</strong> ESP32 & ESP8266
+<strong>Tech Stack:</strong> HTTPClient, WiFiClientSecure, ArduinoJson, GitHub REST API
+<strong>Date:</strong> November 2025
+<p>---</p>
+<h2>Overview</h2>
+<p>Over-the-air (OTA) firmware updates are <strong>critical</strong> for IoT devices deployed in the field. Nobody wants to physically access hundreds of sensors to fix a bug or add a feature. This article deep-dives into a production-ready OTA system that:</p>
+<ul>
+<li>Uses <strong>GitHub Releases</strong> as the distribution mechanism</li>
+<li>Supports <strong>private repositories</strong> with authentication tokens</li>
+<li>Implements <strong>version comparison</strong> to prevent unnecessary updates</li>
+<li>Provides <strong>browser-based manual upload</strong> as a fallback</li>
+<li>Handles <strong>watchdog timeouts</strong> during large downloads</li>
+<li>Includes <strong>rollback protection</strong> (ESP32 partitions)</li>
+</ul>
+<p>This isn't a toy example—it's a battle-tested system handling real deployments.</p>
+<p>---</p>
+<h2>The OTA Problem Space</h2>
+<h3>Why OTA Updates are Hard</h3>
+<p>1. <strong>Reliability:</strong> Device must download, flash, and boot new firmware without bricking</p>
+<p>2. <strong>Security:</strong> Downloads must be authenticated to prevent malicious firmware</p>
+<p>3. <strong>Size Constraints:</strong> ESP8266 has only ~1MB usable flash; downloads must be efficient</p>
+<p>4. <strong>Network Conditions:</strong> Updates may happen over spotty WiFi</p>
+<p>5. <strong>Rollback Safety:</strong> If new firmware crashes, device must recover</p>
+<p>6. <strong>Version Management:</strong> Need to track current version vs. available versions</p>
+<p>A naive implementation (just download and flash) fails catastrophically in production.</p>
+<p>---</p>
+<h2>Architecture: GitHub as Update Server</h2>
+<h3>Why GitHub Releases?</h3>
+<strong>Advantages:</strong>
+<ul>
+<li>Free CDN distribution (GitHub's infrastructure)</li>
+<li>Built-in version tagging (<code>v1.2.3</code>)</li>
+<li>Asset management (upload compiled <code>.bin</code> files)</li>
+<li>Private repository support (authentication via tokens)</li>
+<li>REST API for programmatic access</li>
+</ul>
+<strong>Workflow:</strong>
+<p>1. Developer tags a new release: <code>git tag v1.2.4 && git push --tags</code></p>
+<p>2. Developer uploads compiled <code>firmware.bin</code> as release asset</p>
+<p>3. Device polls GitHub API hourly for new releases</p>
+<p>4. Device compares version numbers (semantic versioning)</p>
+<p>5. If newer version exists, device downloads and flashes firmware</p>
+<p>6. Device reboots into new firmware</p>
+<h3>Implementation Components</h3>
+<strong>Core Classes:</strong>
+<p>1. <strong>ESPGithubOtaUpdate</strong> — Main OTA handler</p>
+<p>2. <strong>ESP8266OtaUpdate</strong> — Platform-specific ESP8266 web server (port 8888)</p>
+<strong>Key Files:</strong>
+<ul>
+<li><code>src/common/ota_handler.cpp/h</code> — GitHub API, version checking, download logic</li>
+<li><code>src/common/esp8266_ota_update.cpp/h</code> — ESP8266 browser upload handler</li>
+</ul>
+<p>---</p>
+<h2>GitHub API Integration</h2>
+<h3>Fetching Latest Release Info</h3>
+<p>The <code>getLatestReleaseInfo()</code> method queries GitHub's REST API:</p>
+<pre><code>void ESPGithubOtaUpdate::getLatestReleaseInfo(String &version, String &updateURL) {
+<p>WiFiClientSecure secureClient = getSecureClient();</p>
+<p>HTTPClient httpClient;</p>
+<p>String url = String(apiEndpoint) + "/repos/" + releaseRepo + "/releases/latest";</p>
+<p>if (!httpClient.begin(secureClient, url)) {</p>
+<p>LOG_PRINTLN(F("OTA: Failed to begin HTTP connection"));</p>
+<p>return;</p>
+<p>}</p>
+<p>httpClient.setTimeout(30000);         // 30 second total timeout</p>
+<p>httpClient.setConnectTimeout(10000);  // 10 second connect timeout</p>
+<p>httpClient.addHeader("Authorization", String("token ") + authToken);</p>
+<p>httpClient.addHeader("Accept", "application/vnd.github.v3+json");</p>
+<p>httpClient.addHeader("User-Agent", "ESPGithubOtaUpdate/1.0");</p>
+<p>int httpCode = httpClient.GET();</p>
+<p>if (httpCode == HTTP_CODE_UNAUTHORIZED) {</p>
+<p>LOG_PRINTLN(F("OTA: 401 Unauthorized - Check GitHub token validity"));</p>
+<p>return;</p>
+<p>}</p>
+<p>if (httpCode != HTTP_CODE_OK) {</p>
+<p>return;</p>
+<p>}</p>
+<p>String payload = httpClient.getString();</p>
+<p>httpClient.end();</p>
+<p>// Parse JSON response...</p>
+<p>}</code></pre></p>
+<strong>Key Details:</strong>
+<ul>
+<li><strong>Authorization Header:</strong> <code>token <YOUR_GITHUB_TOKEN></code> for private repos</li>
+<li><strong>User-Agent Required:</strong> GitHub API rejects requests without it</li>
+<li><strong>Accept Header:</strong> Specifies GitHub API version (v3)</li>
+<li><strong>Timeout Handling:</strong> Long timeouts prevent premature failures on slow networks</li>
+</ul>
+<h3>Parsing JSON Response</h3>
+<p>GitHub returns JSON like this:</p>
+<pre><code>{
+<p>"tag_name": "v1.2.4",</p>
+<p>"assets": [</p>
+<p>{</p>
+<p>"name": "firmware.bin",</p>
+<p>"browser_download_url": "https://github.com/.../firmware.bin"</p>
+<p>}</p>
+<p>]</p>
+<p>}</code></pre></p>
+<p>The code parses this with ArduinoJson v7:</p>
+<pre><code>JsonDocument doc;
+<p>DeserializationError error = deserializeJson(doc, payload.c_str());</p>
+<p>if (error) {</p>
+<p>LOG_PRINTLN("OTA: Failed to parse JSON response");</p>
+<p>return;</p>
+<p>}</p>
+<p>const char *tagName = doc["tag_name"];</p>
+<p>JsonArray assets = doc["assets"];</p>
+<p>for (auto value : assets) {</p>
+<p>JsonObject asset = value.as<JsonObject>();</p>
+<p>const char *name = asset["name"];</p>
+<p>if (String(name) == binaryFileName) {  // e.g., "firmware.bin"</p>
+<p>const char *browserDownloadUrl = asset["browser_download_url"];</p>
+<p>version = String(tagName);</p>
+<p>updateURL = String(browserDownloadUrl);</p>
+<p>break;</p>
+<p>}</p>
+<p>}</code></pre></p>
+<strong>Why Filter by Filename?</strong>
+<p>A release might have multiple assets (ESP32 vs ESP8266 binaries, source archives, etc.). We only want the <code>.bin</code> file matching our platform.</p>
+<p>---</p>
+<h2>Semantic Version Comparison</h2>
+<h3>Version String Parsing</h3>
+<p>The template uses semantic versioning (<code>MAJOR.MINOR.PATCH</code>):</p>
+<pre><code>bool ESPGithubOtaUpdate::isNewerVersionAvailable(String &latestVersion, String &updateURL) {
+<p>getLatestReleaseInfo(latestVersion, updateURL);</p>
+<p>int currentMajor, currentMinor, currentPatch;</p>
+<p>int latestMajor, latestMinor, latestPatch;</p>
+<p>sscanf(currentVersion, "%d.%d.%d", &currentMajor, &currentMinor, &currentPatch);</p>
+<p>sscanf(latestVersion.c_str(), "%d.%d.%d", &latestMajor, &latestMinor, &latestPatch);</p>
+<p>bool newer_firmware =</p>
+<p>(latestMajor > currentMajor) ||</p>
+<p>(latestMajor == currentMajor && latestMinor > currentMinor) ||</p>
+<p>(latestMajor == currentMajor && latestMinor == currentMinor && latestPatch > currentPatch);</p>
+<p>return newer_firmware;</p>
+<p>}</code></pre></p>
+<strong>Examples:</strong>
+<p>| Current | Latest | Result |</p>
+<p>|---------|--------|--------|</p>
+<p>| 1.2.3   | 1.2.4  | Update |</p>
+<p>| 1.2.3   | 1.3.0  | Update |</p>
+<p>| 1.2.3   | 2.0.0  | Update |</p>
+<p>| 1.2.4   | 1.2.3  | No update (downgrade) |</p>
+<p>| 1.2.3   | 1.2.3  | No update (same) |</p>
+<p>This prevents <strong>downgrade attacks</strong> (malicious actor can't force older, vulnerable firmware).</p>
+<p>---</p>
+<h2>The Download and Flash Process</h2>
+<h3>ESP32 Implementation</h3>
+<p>ESP32 uses the <code>HTTPUpdate</code> library:</p>
+<pre><code>void ESPGithubOtaUpdate::upgradeSoftware() {
+<p>if (WiFi.status() != WL_CONNECTED) {</p>
+<p>LOG_PRINTLN("OTA: WiFi not connected, skipping update check");</p>
+<p>return;</p>
+<p>}</p>
+<p>String latestVersion, updateURL;</p>
+<p>if (!isNewerVersionAvailable(latestVersion, updateURL)) {</p>
+<p>DEBUG_PRINTLN("OTA: Already running latest version");</p>
+<p>return;</p>
+<p>}</p>
+<p>LOG_PRINTLN("OTA: Updating from " + String(currentVersion) + " to " + latestVersion);</p>
+<p>LOG_PRINTLN("OTA: Downloading from " + updateURL);</p>
+<p>WiFiClientSecure secureClient = getSecureClient();</p>
+<p>// Critical: Set update callback to feed watchdog</p>
+<p>httpUpdate.onProgress([](int progress, int total) {</p>
+<p>#ifdef ESP32</p>
+<p>esp_task_wdt_reset();  // Feed watchdog during download</p>
+<p>#elif defined(ESP8266)</p>
+<p>ESP.wdtFeed();</p>
+<p>#endif</p>
+<p>if (progress % 10000 == 0) {  // Log every ~10KB</p>
+<p>DEBUG_PRINT(".");</p>
+<p>}</p>
+<p>});</p>
+<p>t_httpUpdate_return ret = httpUpdate.update(secureClient, updateURL);</p>
+<p>switch (ret) {</p>
+<p>case HTTP_UPDATE_FAILED:</p>
+<p>LOG_PRINTLN("OTA: Update failed - " + httpUpdate.getLastErrorString());</p>
+<p>break;</p>
+<p>case HTTP_UPDATE_NO_UPDATES:</p>
+<p>LOG_PRINTLN("OTA: No update available");</p>
+<p>break;</p>
+<p>case HTTP_UPDATE_OK:</p>
+<p>LOG_PRINTLN("OTA: Update successful, rebooting...");</p>
+<p>delay(1000);</p>
+<p>ESP.restart();</p>
+<p>break;</p>
+<p>}</p>
+<p>}</code></pre></p>
+<strong>Critical Detail:</strong> The <code>onProgress()</code> callback <strong>feeds the watchdog</strong>. Without this, large firmware files (>500KB) would trigger watchdog resets mid-download on ESP8266 (8-second timeout).
+<h3>ESP8266 Implementation</h3>
+<p>ESP8266 uses <code>ESPhttpUpdate</code>:</p>
+<pre><code>#ifdef ESP8266
+<p>ESPhttpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);</p>
+<p>ESPhttpUpdate.onProgress([](int progress, int total) {</p>
+<p>ESP.wdtFeed();  // CRITICAL for 8-second watchdog</p>
+<p>});</p>
+<p>t_httpUpdate_return ret = ESPhttpUpdate.update(secureClient, updateURL);</code></pre></p>
+<strong>Key Difference:</strong> ESP8266's 8-second hardware watchdog is <strong>non-configurable</strong>. The progress callback must fire at least every 8 seconds, or the device resets.
+<p>---</p>
+<h2>Security Considerations</h2>
+<h3>Current Implementation: Insecure Mode</h3>
+<pre><code>WiFiClientSecure getSecureClient() {
+<p>WiFiClientSecure secureClient;</p>
+<p>secureClient.setInsecure(); // ⚠️ Skip certificate verification</p>
+<p>#ifdef ESP32</p>
+<p>httpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);</p>
+<p>#elif defined(ESP8266)</p>
+<p>ESPhttpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);</p>
+<p>#endif</p>
+<p>return secureClient;</p>
+<p>}</code></pre></p>
+<strong>Why This is a Problem:</strong>
+<code>setInsecure()</code> disables SSL/TLS certificate validation. An attacker performing a <strong>man-in-the-middle (MITM) attack</strong> could:
+<p>1. Intercept the OTA update request</p>
+<p>2. Serve malicious firmware</p>
+<p>3. Device flashes the malicious firmware</p>
+<p>4. Device is now compromised</p>
+<strong>This is documented in the codebase</strong> (see <code>CLAUDE.md</code>) as a known issue requiring improvement.
+<h3>Hardening: Certificate Pinning</h3>
+<strong>For ESP32:</strong>
+<pre><code>// Use GitHub's root certificate (ISRG Root X1 - Let's Encrypt)
+<p>const char* github_root_ca = R"EOF(</p>
+<p>-----BEGIN CERTIFICATE-----</p>
+<p>MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw</p>
+<p>TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh</p>
+<p>cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4</p>
+<p>WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu</p>
+<p>ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY</p>
+<p>MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc</p>
+<p>h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+</p>
+<p>0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U</p>
+<p>A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW</p>
+<p>T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH</p>
+<p>B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC</p>
+<p>B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv</p>
+<p>KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn</p>
+<p>OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn</p>
+<p>jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw</p>
+<p>qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI</p>
+<p>rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV</p>
+<p>HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq</p>
+<p>hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL</p>
+<p>ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ</p>
+<p>3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK</p>
+<p>NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5</p>
+<p>ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur</p>
+<p>TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC</p>
+<p>jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc</p>
+<p>oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq</p>
+<p>4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA</p>
+<p>mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d</p>
+<p>emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=</p>
+<p>-----END CERTIFICATE-----</p>
+<p>)EOF";</p>
+<p>WiFiClientSecure secureClient;</p>
+<p>secureClient.setCACert(github_root_ca);  // ✅ Secure</code></pre></p>
+<strong>For ESP8266:</strong>
+<p>ESP8266 has limited RAM (~80KB). Storing certificates is challenging. Options:</p>
+<p>1. <strong>Certificate Pinning</strong> (uses ~2KB RAM):</p>
+<pre><code>   secureClient.setCACert(github_root_ca);
+<p>``<code></p>
+<p>2. <strong>Fingerprint Pinning</strong> (uses ~20 bytes, less secure):</p>
+</code>`<code>cpp
+<p>const char* github_fingerprint = "AA:BB:CC:DD:EE:FF:...";</p>
+<p>secureClient.setFingerprint(github_fingerprint);</p>
+</code>`<code>
+<p>3. <strong>Time-Based Validation</strong> (requires NTP sync):</p>
+</code>`<code>cpp
+<p>configTime(0, 0, "pool.ntp.org");  // Sync time</p>
+<p>secureClient.setX509Time(time(nullptr));</p>
+</code>`<code>
+<strong>Recommended:</strong> Use certificate pinning on ESP32, fingerprint on ESP8266 (update fingerprint when GitHub renews certs).
+<h3>Additional Security Measures</h3>
+<strong>1. Firmware Signature Verification</strong>
+<p>Before flashing, verify cryptographic signature:</p>
+</code></pre>cpp
+<p>// Pseudocode (not implemented in template)</p>
+<p>bool verifySignature(uint8_t <em>firmware, size_t size, uint8_t </em>signature) {</p>
+<p>// Use mbedTLS SHA256 + RSA verification</p>
+<p>return mbedtls_rsa_pkcs1_verify(...);</p>
+<p>}</p>
+<pre><code>
+<strong>2. Rollback Protection (ESP32)</strong>
+<p>ESP32 supports dual OTA partitions:</p>
+</code></pre>
+<p>Flash Layout:</p>
+<ul>
+<li>Partition 0: factory (fallback)</li>
+<li>Partition 1: ota_0 (active)</li>
+<li>Partition 2: ota_1 (new firmware)</li>
+</ul>
+<pre><code>
+<p>After downloading to </code>ota_1<code>, ESP32 boots into it. If it crashes repeatedly, the bootloader rolls back to </code>ota_0<code>.</p>
+<strong>Enable in PlatformIO:</strong></code></pre>ini
+<p>board_build.partitions = min_spiffs.csv</p>
+<pre><code>
+<strong>3. Secure Boot (ESP32 Only)</strong>
+<p>ESP32 can verify bootloader signature at boot:</p>
+</code></pre>bash
+<h1>Generate signing key</h1>
+<p>espsecure.py generate_signing_key secure_boot_key.pem</p>
+<h1>Sign bootloader</h1>
+<p>espsecure.py sign_data --keyfile secure_boot_key.pem bootloader.bin</p>
+<pre><code>
+<p>This prevents flashing unauthorized firmware (even with physical access).</p>
+<p>---</p>
+<h2>Browser-Based Manual Upload</h2>
+<h3>Why a Fallback is Needed</h3>
+<p>GitHub-based OTA can fail if:</p>
+<ul>
+<li>GitHub is down (rare but possible)</li>
+<li>Network blocks GitHub (corporate firewalls)</li>
+<li>Token expires or is revoked</li>
+<li>Version comparison logic has a bug</li>
+</ul>
+<p>The template includes <strong>browser-based upload</strong> as a backup:</p>
+</code></pre>
+<p>http://<device-ip>/uploadFirmware</p>
+<pre><code>
+<h3>ESP32 Implementation</h3>
+<p>ESP32 uses </code>ESPAsyncWebServer<code>'s built-in upload handling:</p>
+</code></pre>cpp
+<p>void ESPGithubOtaUpdate::registerFirmwareUploadRoutes(</p>
+<p>AsyncWebServer *server,</p>
+<p>std::map<String, String> *descriptions</p>
+<p>) {</p>
+<p>server->on("/uploadFirmware", HTTP_GET, [](AsyncWebServerRequest *request) {</p>
+<p>String html = "<h1>Upload Firmware</h1>";</p>
+<p>html += "<form method='POST' action='/uploadFirmware' enctype='multipart/form-data'>";</p>
+<p>html += "<input type='file' name='firmware'>";</p>
+<p>html += "<input type='submit' value='Upload'>";</p>
+<p>html += "</form>";</p>
+<p>request->send(200, "text/html", html);</p>
+<p>});</p>
+<p>server->on("/uploadFirmware", HTTP_POST,</p>
+<p>[](AsyncWebServerRequest *request) {</p>
+<p>bool updateSuccessful = !Update.hasError();</p>
+<p>request->send(200, "text/html",</p>
+<p>updateSuccessful ? "Update OK, rebooting..." : "Update FAILED");</p>
+<p>if (updateSuccessful) {</p>
+<p>delay(1000);</p>
+<p>ESP.restart();</p>
+<p>}</p>
+<p>},</p>
+<p>[](AsyncWebServerRequest *request, String filename, size_t index,</p>
+<p>uint8_t *data, size_t len, bool final) {</p>
+<p>if (index == 0) {  // First chunk</p>
+<p>LOG_PRINTLN("Upload started: " + filename);</p>
+<p>if (!filename.endsWith(".bin")) {</p>
+<p>LOG_PRINTLN("Invalid file type (must be .bin)");</p>
+<p>return;</p>
+<p>}</p>
+<p>size_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;</p>
+<p>if (!Update.begin(maxSketchSpace)) {</p>
+<p>LOG_PRINTLN("Upload failed: " + Update.errorString());</p>
+<p>}</p>
+<p>}</p>
+<p>// Write chunk</p>
+<p>if (Update.write(data, len) != len) {</p>
+<p>LOG_PRINTLN("Upload write failed");</p>
+<p>}</p>
+<p>if (final) {  // Last chunk</p>
+<p>if (Update.end(true)) {</p>
+<p>LOG_PRINTLN("Upload successful: " + String(index + len) + " bytes");</p>
+<p>} else {</p>
+<p>LOG_PRINTLN("Upload failed: " + Update.errorString());</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>);</p>
+<p>}</p>
+<pre><code>
+<strong>Key Points:</strong>
+<p>1. <strong>File Extension Validation:</strong> Only </code>.bin<code> files accepted</p>
+<p>2. <strong>Chunk-Based Upload:</strong> Large files split into chunks (prevents RAM overflow)</p>
+<p>3. <strong>Error Handling:</strong> Detailed logging via WebSocket</p>
+<p>4. <strong>Auto-Reboot:</strong> Device restarts after successful upload</p>
+<h3>ESP8266 Quirk: Separate Server</h3>
+<strong>Problem:</strong> </code>ESPAsyncWebServer<code> on ESP8266 has upload bugs (crashes, corruption).
+<strong>Solution:</strong> Use a <strong>separate synchronous web server on port 8888</strong>:
+</code></pre>cpp
+<p>#ifdef ESP8266</p>
+<p>void setupEsp8266OtaUpdate() {</p>
+<p>esp8266OtaServer.on("/", HTTP_GET, []() {</p>
+<p>esp8266OtaServer.send(200, "text/html",</p>
+<p>"<form method='POST' action='/update' enctype='multipart/form-data'>"</p>
+<p>"<input type='file' name='update'><input type='submit'></form>");</p>
+<p>});</p>
+<p>esp8266OtaServer.on("/update", HTTP_POST,</p>
+<p>[]() {</p>
+<p>esp8266OtaServer.send(200, "text/html",</p>
+<p>Update.hasError() ? "FAIL" : "OK");</p>
+<p>delay(1000);</p>
+<p>ESP.restart();</p>
+<p>},</p>
+<p>[]() {</p>
+<p>HTTPUpload& upload = esp8266OtaServer.upload();</p>
+<p>if (upload.status == UPLOAD_FILE_START) {</p>
+<p>Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000);</p>
+<p>} else if (upload.status == UPLOAD_FILE_WRITE) {</p>
+<p>Update.write(upload.buf, upload.currentSize);</p>
+<p>} else if (upload.status == UPLOAD_FILE_END) {</p>
+<p>Update.end(true);</p>
+<p>}</p>
+<p>}</p>
+<p>);</p>
+<p>esp8266OtaServer.begin(8888);  // Port 8888, not 80</p>
+<p>LOG_PRINTLN("ESP8266 OTA upload server running on port 8888");</p>
+<p>}</p>
+<p>#endif</p>
+<pre><code>
+<strong>Usage:</strong></code></pre>
+<p>http://<esp8266-ip>:8888/</p>
+<pre><code>
+<p>This workaround is platform-specific and isolated in </code>esp8266_ota_update.cpp<code>.</p>
+<p>---</p>
+<h2>Watchdog Integration</h2>
+<h3>The Timeout Problem</h3>
+<strong>Scenario:</strong>
+<p>1. ESP8266 watchdog timeout: <strong>8 seconds</strong></p>
+<p>2. Firmware file size: <strong>600 KB</strong></p>
+<p>3. Download speed: <strong>50 KB/s</strong> (slow WiFi)</p>
+<p>4. Download time: <strong>12 seconds</strong></p>
+<p>5. Result: <strong>Watchdog reset during download</strong> ❌</p>
+<h3>The Solution: Progress Callbacks</h3>
+</code></pre>cpp
+<p>httpUpdate.onProgress([](int progress, int total) {</p>
+<p>// Feed watchdog every callback</p>
+<p>#ifdef ESP32</p>
+<p>esp_task_wdt_reset();</p>
+<p>#elif defined(ESP8266)</p>
+<p>ESP.wdtFeed();</p>
+<p>#endif</p>
+<p>// Optional: Log progress</p>
+<p>static int lastPercent = -1;</p>
+<p>int percent = (progress * 100) / total;</p>
+<p>if (percent != lastPercent && percent % 10 == 0) {</p>
+<p>DEBUG_PRINTLN("OTA: " + String(percent) + "%");</p>
+<p>lastPercent = percent;</p>
+<p>}</p>
+<p>});</p>
+<pre><code>
+<strong>How Often Does This Fire?</strong>
+<p>The </code>HTTPUpdate<code> library calls </code>onProgress()<code> every <strong>1KB</strong> downloaded. For an 8-second watchdog:</p>
+<ul>
+<li>Minimum required download speed: <strong>1KB / 8s = 128 bytes/sec</strong></li>
+<li>Actual callback interval: <strong>~1KB = 8KB/s minimum speed</strong></li>
+</ul>
+<p>This is safe even on very slow networks.</p>
+<p>---</p>
+<h2>Automatic Update Checks</h2>
+<h3>Hourly Polling</h3>
+</code></pre>cpp
+<p>uint32_t checkForSoftwareUpdateMillis = 60 <em> 60 </em> 1000;  // 1 hour</p>
+<p>uint64_t lastCheckForUpdateMillis = 0;</p>
+<p>int commonLoop() {</p>
+<p>// ... other housekeeping ...</p>
+<p>if (millis() - lastCheckForUpdateMillis > checkForSoftwareUpdateMillis) {</p>
+<p>lastCheckForUpdateMillis = millis();</p>
+<p>if (!configMode && updater != nullptr) {</p>
+<p>updater->upgradeSoftware();</p>
+<p>}</p>
+<p>}</p>
+<p>return 0;  // Normal operation</p>
+<p>}</p>
+<pre><code>
+<strong>Why Hourly?</strong>
+<ul>
+<li><strong>Battery Life:</strong> More frequent checks drain power (not relevant for AC-powered devices)</li>
+<li><strong>GitHub Rate Limits:</strong> API has rate limits (60 requests/hour unauthenticated, 5000/hour authenticated)</li>
+<li><strong>Network Traffic:</strong> Minimize bandwidth usage</li>
+</ul>
+<p>For critical updates, use the <strong>manual trigger</strong>: </code>http://<device-ip>/checkForUpdates<code></p>
+<p>---</p>
+<h2>Deployment Workflow</h2>
+<h3>Developer Workflow</h3>
+<strong>1. Develop and test locally:</strong></code></pre>bash
+<p>pio run -e esp32dev -t upload</p>
+<pre><code>
+<strong>2. Commit changes:</strong></code></pre>bash
+<p>git add .</p>
+<p>git commit -m "Add temperature sensor feature"</p>
+<pre><code>
+<strong>3. Tag a release:</strong></code></pre>bash
+<p>git tag v1.2.4</p>
+<p>git push origin v1.2.4</p>
+<pre><code>
+<strong>4. Build release firmware:</strong></code></pre>bash
+<p>pio run -e esp32dev</p>
+<p>cp .pio/build/esp32dev/firmware.bin firmware-esp32-v1.2.4.bin</p>
+<p>pio run -e nodemcu</p>
+<p>cp .pio/build/nodemcu/firmware.bin firmware-esp8266-v1.2.4.bin</p>
+<pre><code>
+<strong>5. Create GitHub release:</strong>
+<ul>
+<li>Go to GitHub → Releases → Draft a new release</li>
+<li>Tag: </code>v1.2.4<code></li>
+<li>Upload: </code>firmware-esp32-v1.2.4.bin<code>, </code>firmware-esp8266-v1.2.4.bin<code></li>
+<li>Publish</li>
+</ul>
+<strong>6. Devices auto-update within 1 hour</strong>
+<h3>Multi-Device Deployment</h3>
+<p>For 100+ devices:</p>
+<p>1. <strong>Staged Rollout:</strong> Tag releases incrementally (</code>v1.2.4-beta<code>, </code>v1.2.4-stable<code>)</p>
+<p>2. <strong>Canary Devices:</strong> Configure 5-10 devices to check every 5 minutes</p>
+<p>3. <strong>Monitor Logs:</strong> Use WebSocket log viewer to watch canary devices</p>
+<p>4. <strong>Full Rollout:</strong> If stable, change all devices to check for </code>v1.2.4-stable<code></p>
+<p>---</p>
+<h2>Monitoring and Diagnostics</h2>
+<h3>OTA-Specific Logs</h3>
+</code></pre>cpp
+<p>LOG_PRINTLN("OTA: Checking for updates...");</p>
+<p>LOG_PRINTLN("OTA: Current version: " + String(currentVersion));</p>
+<p>LOG_PRINTLN("OTA: Latest version: " + latestVersion);</p>
+<p>LOG_PRINTLN("OTA: Downloading from " + updateURL);</p>
+<p>LOG_PRINTLN("OTA: Download complete, flashing...");</p>
+<p>LOG_PRINTLN("OTA: Update successful, rebooting...");</p>
+<pre><code>
+<p>These logs go to <strong>both Serial and WebSocket</strong> (accessible at </code>http://<device-ip>/logsStream<code>).</p>
+<h3>Error Codes</h3>
+</code></pre>cpp
+<p>switch (ret) {</p>
+<p>case HTTP_UPDATE_FAILED:</p>
+<p>LOG_PRINTLN("OTA: Update failed - " + httpUpdate.getLastErrorString());</p>
+<p>break;</p>
+<p>case HTTP_UPDATE_NO_UPDATES:</p>
+<p>LOG_PRINTLN("OTA: No updates available");</p>
+<p>break;</p>
+<p>case HTTP_UPDATE_OK:</p>
+<p>LOG_PRINTLN("OTA: Update successful");</p>
+<p>break;</p>
+<p>}</p>
+<pre><code>
+<p>Common errors:</p>
+<ul>
+<li></code>HTTP_UPDATE_FAILED<code> + "Not enough space" → Flash partition too small</li>
+<li></code>HTTP_UPDATE_FAILED<code> + "Bad MD5" → Download corruption</li>
+<li></code>HTTP_UPDATE_FAILED<code> + "Connection timeout" → Network issue</li>
+<li></code>401 Unauthorized<code> → Invalid GitHub token</li>
+</ul>
+<p>---</p>
+<h2>Performance Characteristics</h2>
+<h3>Update Duration</h3>
+<strong>ESP32 (WiFi: 20 Mbps, File: 500KB):</strong>
+<ul>
+<li>GitHub API check: <strong>1-2 seconds</strong></li>
+<li>Download: <strong>2-3 seconds</strong></li>
+<li>Flash: <strong>5-7 seconds</strong></li>
+<li>Reboot: <strong>3-5 seconds</strong></li>
+<li><strong>Total: ~15-20 seconds</strong></li>
+</ul>
+<strong>ESP8266 (WiFi: 10 Mbps, File: 400KB):</strong>
+<ul>
+<li>GitHub API check: <strong>2-4 seconds</strong></li>
+<li>Download: <strong>4-6 seconds</strong></li>
+<li>Flash: <strong>8-12 seconds</strong></li>
+<li>Reboot: <strong>5-8 seconds</strong></li>
+<li><strong>Total: ~20-30 seconds</strong></li>
+</ul>
+<h3>Flash Wear Considerations</h3>
+<p>ESP flash memory has <strong>~100,000 write cycles</strong>. If updating daily:</p>
+<ul>
+<li>100,000 cycles ÷ 365 days/year = <strong>274 years</strong></li>
+</ul>
+<p>Flash wear is <strong>not a concern</strong> for OTA updates.</p>
+<p>---</p>
+<h2>Edge Cases and Failure Modes</h2>
+<h3>Case 1: Power Loss During Flash</h3>
+<strong>Scenario:</strong> Device loses power while flashing new firmware.
+<strong>ESP32 Behavior:</strong>
+<ul>
+<li>Dual OTA partitions prevent bricking</li>
+<li>Bootloader boots from previous partition</li>
+<li>Device remains operational (old firmware)</li>
+</ul>
+<strong>ESP8266 Behavior:</strong>
+<ul>
+<li>No dual partitions (single OTA partition)</li>
+<li>Device may brick (requires USB reflash)</li>
+<li><strong>Mitigation:</strong> Use UPS or battery backup for critical deployments</li>
+</ul>
+<h3>Case 2: Corrupted Download</h3>
+<strong>Scenario:</strong> Network glitch corrupts firmware during download.
+<strong>Protection:</strong></code></pre>cpp
+<p>if (Update.end(true)) {  // Verify MD5 checksum</p>
+<p>LOG_PRINTLN("Update successful");</p>
+<p>} else {</p>
+<p>LOG_PRINTLN("Update failed: " + Update.errorString());</p>
+<p>}</p>
+<pre><code>
+<p>The </code>Update<code> library verifies MD5 checksums. Corrupted files are rejected.</p>
+<h3>Case 3: New Firmware Crashes</h3>
+<strong>Scenario:</strong> New firmware has a bug causing crashes on boot.
+<strong>ESP32 Protection:</strong>
+<ul>
+<li>Bootloader detects repeated crashes</li>
+<li>Rolls back to previous partition after 3 boot failures</li>
+<li>Device recovers automatically</li>
+</ul>
+<strong>ESP8266 Protection:</strong>
+<ul>
+<li><strong>None built-in</strong></li>
+<li><strong>Mitigation:</strong> Implement "heartbeat ping" to server; if device doesn't ping within 5 minutes post-update, assume crash and flag for manual intervention</li>
+</ul>
+<p>---</p>
+<h2>Future Enhancements</h2>
+<h3>1. Delta Updates</h3>
+<strong>Problem:</strong> Full firmware downloads waste bandwidth.
+<strong>Solution:</strong> Binary diff patches (e.g., bsdiff):
+<ul>
+<li>Server computes diff between v1.2.3 and v1.2.4</li>
+<li>Device downloads 20KB patch instead of 500KB firmware</li>
+<li>Device applies patch in-place</li>
+</ul>
+<strong>Savings:</strong> 90%+ bandwidth reduction for incremental updates.
+<h3>2. Update Scheduling</h3>
+<strong>Problem:</strong> Updates at random times may interrupt critical operations.
+<strong>Solution:</strong> Schedule updates during maintenance windows:</code></pre>cpp
+<p>// Only update between 2 AM - 4 AM local time</p>
+<p>if (hour() >= 2 && hour() <= 4) {</p>
+<p>updater->upgradeSoftware();</p>
+<p>}</p>
+<pre><code>
+<h3>3. Batch Update Coordination</h3>
+<strong>Problem:</strong> 1000 devices updating simultaneously creates network congestion.
+<strong>Solution:</strong> Staggered rollout:</code></pre>cpp
+<p>// Device ID modulo determines delay</p>
+<p>uint32_t deviceId = ESP.getEfuseMac();</p>
+<p>uint32_t delayMinutes = (deviceId % 60);  // 0-59 minutes</p>
+<p>delay(delayMinutes <em> 60 </em> 1000);</p>
+<p>updater->upgradeSoftware();</p>
+</code>`<code>
+<h3>4. Firmware Encryption</h3>
+<strong>Problem:</strong> Firmware binary is readable on GitHub (intellectual property risk).
+<strong>Solution:</strong> Encrypt firmware with AES-256:
+<ul>
+<li>Device holds decryption key in eFuse (ESP32 only)</li>
+<li>Download encrypted firmware</li>
+<li>Decrypt and flash</li>
+</ul>
+<p>---</p>
+<h2>Comparison: Alternative OTA Methods</h2>
+<h3>ArduinoOTA (mDNS-based)</h3>
+<strong>Pros:</strong>
+<ul>
+<li>No server required (peer-to-peer)</li>
+<li>Fast (local network)</li>
+</ul>
+<strong>Cons:</strong>
+<ul>
+<li>Requires local network access (no remote updates)</li>
+<li>Manual triggering (not automatic)</li>
+<li>No version management</li>
+</ul>
+<strong>Use Case:</strong> Development/testing only.
+<h3>Custom HTTPS Server</h3>
+<strong>Pros:</strong>
+<ul>
+<li>Full control over update logic</li>
+<li>Can implement complex rollout strategies</li>
+</ul>
+<strong>Cons:</strong>
+<ul>
+<li>Requires hosting infrastructure</li>
+<li>Need to implement version management</li>
+<li>Certificate management overhead</li>
+</ul>
+<strong>Use Case:</strong> Large-scale commercial deployments (1000+ devices).
+<h3>GitHub Releases (This Template)</h3>
+<strong>Pros:</strong>
+<ul>
+<li>Free hosting and CDN</li>
+<li>Built-in version management (tags)</li>
+<li>Minimal server infrastructure</li>
+</ul>
+<strong>Cons:</strong>
+<ul>
+<li>Dependent on GitHub uptime</li>
+<li>API rate limits (5000/hour with auth)</li>
+<li>Public binaries (unless private repo)</li>
+</ul>
+<strong>Use Case:</strong> Small to medium deployments (1-1000 devices).
+<p>---</p>
+<h2>Lessons Learned</h2>
+<h3>1. Watchdog Feeding is Non-Negotiable</h3>
+<p>Initial implementation didn't feed the watchdog during downloads. Result: Every update attempt reset the device mid-flash. <strong>Always use progress callbacks.</strong></p>
+<h3>2. Certificate Validation Matters</h3>
+<p>Skipping SSL verification with </code>setInsecure()<code> is tempting (it Just Works™). But it's a security hole. <strong>Use certificate pinning in production.</strong></p>
+<h3>3. ESP8266 Upload Bugs Require Workarounds</h3>
+</code>ESPAsyncWebServer<code> upload handling on ESP8266 is unreliable. The separate synchronous server on port 8888 solved this. <strong>Platform-specific quirks require platform-specific solutions.</strong>
+<h3>4. Semantic Versioning Prevents Chaos</h3>
+<p>String comparison (</code>"v1.10.0" < "v1.9.0"<code> → true!) fails. Parsing into integers gives correct ordering. <strong>Use proper version comparison logic.</strong></p>
+<h3>5. Rollback Protection is Critical</h3>
+<p>Without dual OTA partitions (ESP32), a bad update bricks the device. <strong>Always test new firmware on a dev board before deploying.</strong></p>
+<p>---</p>
+<h2>Conclusion</h2>
+<p>This OTA system demonstrates that <strong>GitHub can be a robust firmware distribution platform</strong> for IoT devices. By combining GitHub's API with proper version management, watchdog handling, and fallback mechanisms, you get a production-ready update system with zero hosting costs.</p>
+<strong>Key Takeaways:</strong>
+<p>✅ <strong>GitHub Releases</strong> provide free, versioned firmware hosting</p>
+<p>✅ <strong>Semantic versioning</strong> prevents downgrades and ensures correct update order</p>
+<p>✅ <strong>Watchdog feeding</strong> is mandatory during downloads (esp. ESP8266)</p>
+<p>✅ <strong>Certificate pinning</strong> should replace </code>setInsecure()<code> in production</p>
+<p>✅ <strong>Browser upload</strong> provides a critical fallback mechanism</p>
+<p>✅ <strong>Dual OTA partitions</strong> (ESP32) enable automatic rollback</p>
+<strong>Security Warning:</strong> The current </code>setInsecure()` implementation is suitable for prototypes but <strong>must be hardened</strong> for production deployments. Implement certificate pinning, firmware signature verification, and consider ESP32 secure boot for mission-critical devices.
+<strong>Explore the code:</strong> <a href="https://github.com/rmfalco89/esp-project-template" target="_blank">github.com/rmfalco89/esp-project-template</a>
+<p>---</p>
+<strong>Related Articles:</strong>
+<ul>
+<li><a href="./esp-project-template-architecture.md" target="_blank">ESP32 Project Template - Production-Ready IoT Foundation</a></li>
+</ul>
+<strong>Tags:</strong> #ESP32 #ESP8266 #OTA #Firmware #IoT #Security #GitHub #Embedded
+        </div>
+    </article>
+</body>
+</html>

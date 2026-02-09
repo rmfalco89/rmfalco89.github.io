@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Project Template - Architecture | Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <article>
+        <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        <header>
+            <h1>ESP32 Project Template - Production-Ready IoT Foundation</h1>
+            
+        </header>
+        <div class="content">
+            
+<strong>GitHub Repository:</strong> <a href="https://github.com/rmfalco89/esp-project-template" target="_blank">rmfalco89/esp-project-template</a>
+<strong>Platform:</strong> ESP32 & ESP8266 (dual-platform support)
+<strong>Framework:</strong> Arduino + PlatformIO
+<strong>Tech Stack:</strong> C++, AsyncWebServer, ArduinoJson, mDNS
+<strong>Date:</strong> November 2025
+<p>---</p>
+<h2>Overview</h2>
+<p>This project is a production-ready template for ESP32 and ESP8266 IoT devices that solves one of embedded development's biggest challenges: <strong>starting from a solid foundation rather than reinventing the wheel</strong>. It provides 95% code sharing between ESP32 and ESP8266 platforms, complete with WiFi management, web-based configuration, OTA updates, EEPROM persistence, and comprehensive monitoring.</p>
+<p>Instead of writing boilerplate WiFi connection logic, configuration storage, and update mechanisms for every new IoT project, developers can clone this template and immediately start implementing their sensor logic, actuator control, or custom features.</p>
+<p>---</p>
+<h2>The Problem: Embedded Development Friction</h2>
+<p>Every embedded IoT project needs the same foundational components:</p>
+<ul>
+<li>WiFi connection management with fallback to AP mode</li>
+<li>Persistent configuration storage</li>
+<li>Web interface for device setup</li>
+<li>Over-the-air (OTA) firmware updates</li>
+<li>Logging and debugging infrastructure</li>
+<li>Reset/boot loop protection</li>
+<li>Memory monitoring</li>
+</ul>
+<p>Without a template, developers spend days or weeks implementing these basics before writing a single line of domain-specific code. Worse, most implementations lack production-ready features like boot loop protection, rollback safety, or proper error handling.</p>
+<p>---</p>
+<h2>Architecture: Dual-Platform Code Sharing</h2>
+<h3>Platform Structure</h3>
+<p>The genius of this template is its split architecture:</p>
+<pre><code>esp-project-template/
+<p>├── src/</p>
+<p>│   ├── main.cpp                    # Project entry point</p>
+<p>│   ├── globals.h/cpp               # Project-specific globals</p>
+<p>│   ├── serverHandles.cpp/h         # Project-specific HTTP routes</p>
+<p>│   ├── system_config.cpp/h         # Project EEPROM configuration</p>
+<p>│   └── common/                     # ⭐ Shared platform-agnostic code</p>
+<p>│       ├── common_main.cpp/h       # Core setup and loop</p>
+<p>│       ├── wifi_handler.cpp/h      # WiFi management</p>
+<p>│       ├── server_handler.cpp/h    # Web server</p>
+<p>│       ├── server_handles.cpp      # Built-in routes (config, OTA, logs)</p>
+<p>│       ├── ota_handler.cpp/h       # GitHub-based OTA updates</p>
+<p>│       ├── device_configuration.h  # Configuration structs</p>
+<p>│       ├── eeprom_utils.tpp        # Template-based EEPROM utilities</p>
+<p>│       ├── memory_stats.cpp/h      # RAM monitoring</p>
+<p>│       ├── power_monitor.h         # VCC voltage tracking</p>
+<p>│       └── version.h               # Auto-incremented software version</p>
+<p>└── platformio.ini                  # Build configuration (ESP32 + ESP8266)</code></pre></p>
+<strong>Key Insight:</strong> The <code>src/common/</code> folder contains all platform-agnostic code. Platform-specific differences (ESP32 vs ESP8266) are handled with compiler guards:
+<pre><code>#ifdef ESP32
+<p>esp_task_wdt_reset();  // ESP32 watchdog</p>
+<p>#elif defined(ESP8266)</p>
+<p>ESP.wdtFeed();         // ESP8266 watchdog</p>
+<p>#endif</code></pre></p>
+<p>This means <strong>95% of the code is shared</strong> between platforms. You write your sensor/actuator logic once, and it runs on both ESP32 and ESP8266 boards.</p>
+<h3>Main Loop Architecture</h3>
+<p>The template uses a <strong>status code pattern</strong> to control execution flow:</p>
+<pre><code>void loop() {
+<p>int status = commonLoop();</p>
+<p>if (status == 2) {  // Boot loop protection</p>
+<p>delay(500);</p>
+<p>return;</p>
+<p>}</p>
+<p>if (status == 1) {  // Configuration mode</p>
+<p>delay(500);</p>
+<p>return;</p>
+<p>}</p>
+<p>// status == 0: Normal operation</p>
+<p>// Your project code runs here</p>
+<p>readSensors();</p>
+<p>updateActuators();</p>
+<p>}</code></pre></p>
+<code>commonLoop()</code> handles all housekeeping:
+<ul>
+<li>WiFi health checks (ping Google.com every 60s)</li>
+<li>LED heartbeat flash</li>
+<li>Watchdog feeding (30s for ESP32, 8s for ESP8266)</li>
+<li>OTA update checks (hourly)</li>
+<li>Quick restart counter reset (prevents false boot loop detection)</li>
+</ul>
+<p>This pattern keeps your project code clean while ensuring the device stays connected, monitored, and updatable.</p>
+<p>---</p>
+<h2>WiFi Management: Smart Configuration Mode</h2>
+<h3>Zero-Touch Configuration</h3>
+<p>On first boot (or when configuration is invalidated), the device:</p>
+<p>1. <strong>Detects missing configuration</strong> from EEPROM</p>
+<p>2. <strong>Starts AP mode</strong> broadcasting <code>ArduinoNet</code> (no password)</p>
+<p>3. <strong>Serves web interface</strong> at <code>http://arduino.local/configureDevice</code></p>
+<p>4. <strong>Tests credentials</strong> before saving to EEPROM</p>
+<p>5. <strong>Reboots</strong> into normal operation mode</p>
+<strong>Smart Features:</strong>
+<ul>
+<li><strong>Quick Restart Detection:</strong> Restarting within 30 seconds triggers config mode (useful for entering setup without factory reset)</li>
+<li><strong>Boot Loop Protection:</strong> 5+ quick restarts enter "boot loop mode" (minimal functionality to prevent infinite crashes)</li>
+<li><strong>mDNS Discovery:</strong> Device accessible via <code>http://arduino.local/</code> on your network</li>
+</ul>
+<h3>WiFi Health Monitoring</h3>
+<p>The template performs <strong>active health checks</strong> every 60 seconds:</p>
+<pre><code>WiFiClient client;
+<p>if (client.connect("google.com", 80)) {</p>
+<p>DEBUG_PRINTLN("WiFi health check: OK");</p>
+<p>client.stop();</p>
+<p>} else {</p>
+<p>LOG_PRINTLN("WiFi health check: FAILED");</p>
+<p>// Attempt reconnection</p>
+<p>}</code></pre></p>
+<p>This catches "connected but not actually working" scenarios common in IoT deployments.</p>
+<h3>Platform-Specific WiFi Tuning</h3>
+<strong>ESP32:</strong>
+<pre><code>WiFi.setSleep(false);                   // Disable sleep mode
+<p>esp_wifi_set_ps(WIFI_PS_NONE);         // Explicit power save disable</code></pre></p>
+<strong>ESP8266:</strong>
+<pre><code>WiFi.setSleepMode(WIFI_NONE_SLEEP);    // Disable sleep mode
+<p>WiFi.persistent(false);                 // Prevent flash wear</code></pre></p>
+<p>These settings improve stability at the cost of ~30mA extra power consumption—a worthwhile trade for reliability in AC-powered devices.</p>
+<p>---</p>
+<h2>Configuration Management: Type-Safe EEPROM</h2>
+<h3>Template-Based EEPROM Utilities</h3>
+<p>The template provides <strong>generic, type-safe EEPROM functions</strong> via C++ templates:</p>
+<pre><code>template <typename T>
+<p>T* readDataFromEeprom(int addr) {</p>
+<p>T<em> config = (T</em>)malloc(sizeof(T));</p>
+<p>T storedConfig;</p>
+<p>EEPROM.begin(512);</p>
+<p>EEPROM.get(addr, storedConfig);</p>
+<p>EEPROM.end();</p>
+<p>uint16_t calculatedChecksum = calculateChecksum(&storedConfig);</p>
+<p>if (calculatedChecksum == storedConfig.checksum) {</p>
+<p>*config = storedConfig;</p>
+<p>return config;</p>
+<p>}</p>
+<p>free(config);</p>
+<p>return nullptr;  // Invalid checksum</p>
+<p>}</code></pre></p>
+<strong>Key Features:</strong>
+<ul>
+<li><strong>Checksum validation</strong> prevents corruption</li>
+<li><strong>Struct packing</strong> (<code>#pragma pack(push, 1)</code>) prevents alignment issues</li>
+<li><strong>Address calculation</strong> helper prevents overlaps</li>
+</ul>
+<h3>Device Configuration Struct</h3>
+<pre><code>#pragma pack(push, 1)
+<p>struct DeviceConfiguration {</p>
+<p>char wifiSsid[33];</p>
+<p>char wifiPassword[64];</p>
+<p>char hostname[64];</p>
+<p>char deviceName[64];</p>
+<p>char githubAuthToken[41];</p>
+<p>bool ledAliveSignal;</p>
+<p>uint16_t checksum;</p>
+<p>};</p>
+<p>#pragma pack(pop)</code></pre></p>
+<p>The <code>#pragma pack(push, 1)</code> directive is <strong>critical</strong>—it removes struct padding, ensuring consistent memory layout across compilations.</p>
+<h3>Address Management</h3>
+<p>The template uses a <strong>smart address calculation pattern</strong>:</p>
+<pre><code>// Initialize addresses in setup()
+<p>JUST_RESTARTED_EEPROM_ADDR = 0;</p>
+<p>DEVICE_CONFIGURATION_EEPROM_ADDR = nextEepromSlot<QuickRestarts>(JUST_RESTARTED_EEPROM_ADDR);</p>
+<p>SYSTEM_CONFIGURATION_EEPROM_ADDR = nextEepromSlot<DeviceConfiguration>(DEVICE_CONFIGURATION_EEPROM_ADDR);</code></pre></p>
+<code>nextEepromSlot<T>()</code> automatically calculates the next available address based on the size of <code>T</code>, preventing accidental memory overlaps.
+<p>---</p>
+<h2>Web Server: Async & Non-Blocking</h2>
+<h3>ESPAsyncWebServer</h3>
+<p>The template uses <strong>ESPAsyncWebServer</strong> instead of the blocking <code>WiFiServer</code>:</p>
+<strong>Benefits:</strong>
+<ul>
+<li>Handles multiple clients simultaneously</li>
+<li>Doesn't block <code>loop()</code> during HTTP requests</li>
+<li>Supports WebSockets for real-time communication</li>
+</ul>
+<h3>Built-In Routes</h3>
+<strong>Common Routes</strong> (in <code>src/common/server_handles.cpp</code>):
+<ul>
+<li><code>/</code> — Home page with system info (version, WiFi strength, memory stats)</li>
+<li><code>/configureDevice</code> — WiFi and device settings interface</li>
+<li><code>/saveConfiguration</code> — Tests WiFi credentials before saving</li>
+<li><code>/reboot</code> — Graceful device restart</li>
+<li><code>/invalidateConfig</code> — Force configuration mode on next boot</li>
+<li><code>/checkForUpdates</code> — Manual OTA update trigger</li>
+<li><code>/uploadFirmware</code> — Browser-based firmware upload</li>
+<li><code>/logsStream</code> — <strong>WebSocket-based real-time log viewer</strong></li>
+</ul>
+<strong>Project Routes</strong> (in <code>src/serverHandles.cpp</code>):
+<p>Add custom routes for your sensors/actuators here.</p>
+<h3>WebSocket Logging</h3>
+<p>One of the most powerful features is <strong>dual logging</strong> (Serial + WebSocket):</p>
+<pre><code>#define LOG_PRINTLN(str) \
+<p>Serial.println(str); \</p>
+<p>notifyClients(str + "\n");</code></pre></p>
+<p>Navigate to <code>http://<device-ip>/logsStream</code> and watch logs in real-time from your browser—perfect for debugging deployed devices without USB access.</p>
+<p>---</p>
+<h2>Developer Experience: Automated Workflow</h2>
+<h3>Auto-Incrementing Version Numbers</h3>
+<p>The <code>extra_script_pre.py</code> script runs before every build:</p>
+<pre><code>def before_upload():
+<p>version_file = "src/common/version.h"</p>
+<p>version_pattern = r'(^.<em>SW_VERSION\s</em>=\s*")(\d+)\.(\d+)\.(\d+)"'</p>
+<p>with open(version_file, "r") as file:</p>
+<p>content = file.readlines()</p>
+<p>with open(version_file, "w") as file:</p>
+<p>for line in content:</p>
+<p>match = re.search(version_pattern, line)</p>
+<p>if match:</p>
+<p>patch_version = int(match.group(4))</p>
+<p>new_line = f'const char *SW_VERSION = "{major}.{minor}.{patch_version + 1}";\n'</p>
+<p>file.write(new_line)</code></pre></p>
+<strong>Result:</strong> Every build gets a unique version number. No manual tracking needed.
+<h3>Serial Monitor Auto-Open</h3>
+<p>The <code>extra_script_post.py</code> script opens the serial monitor after upload:</p>
+<pre><code>def after_upload():
+<p>import subprocess</p>
+<p>subprocess.call(["pio", "device", "monitor"])</p>
+<p>env.AddPostAction("upload", after_upload)</code></pre></p>
+<strong>Workflow:</strong>
+<pre><code>pio run -e esp32dev -t upload
+<h1>Firmware uploads, serial monitor opens automatically</h1></code></pre>
+<p>No more switching between terminal windows!</p>
+<p>---</p>
+<h2>Monitoring & Diagnostics</h2>
+<h3>Memory Statistics (24-Hour Tracking)</h3>
+<p>The template tracks heap memory over 24 hours:</p>
+<pre><code>struct MemoryStats {
+<p>uint32_t currentFree;</p>
+<p>uint32_t minFree24h;</p>
+<p>uint32_t maxFree24h;</p>
+<p>uint32_t avgFree24h;</p>
+<p>uint32_t sampleCount;</p>
+<p>uint64_t lastResetMillis;</p>
+<p>};</code></pre></p>
+<strong>ESP32:</strong>
+<pre><code>currentFree = esp_get_free_heap_size();</code></pre>
+<strong>ESP8266:</strong>
+<pre><code>currentFree = ESP.getFreeHeap();</code></pre>
+<p>Perfect for detecting memory leaks or heap fragmentation in long-running deployments.</p>
+<h3>Power Monitoring (ESP8266)</h3>
+<p>ESP8266 can measure its own supply voltage:</p>
+<pre><code>ADC_MODE(ADC_VCC);  // Configure ADC to read VCC
+<p>void logVCC() {</p>
+<p>float vcc = ESP.getVcc() / 1000.0;  // Convert to volts</p>
+<p>LOG_PRINTLN("VCC: " + String(vcc) + "V");</p>
+<p>}</code></pre></p>
+<p>Use this to detect brownouts or unstable power supplies.</p>
+<h3>Reset Cause Detection</h3>
+<p>The template logs <strong>why the device rebooted</strong>:</p>
+<strong>ESP32:</strong>
+<pre><code>esp_reset_reason_t reason = esp_reset_reason();
+<p>switch (reason) {</p>
+<p>case ESP_RST_POWERON: LOG_PRINTLN("Reset: Power-on"); break;</p>
+<p>case ESP_RST_SW: LOG_PRINTLN("Reset: Software reset"); break;</p>
+<p>case ESP_RST_PANIC: LOG_PRINTLN("Reset: Exception/panic"); break;</p>
+<p>// ... more cases</p>
+<p>}</code></pre></p>
+<strong>ESP8266:</strong>
+<pre><code>rst_info *resetInfo = ESP.getResetInfoPtr();
+<p>LOG_PRINTLN("Reset reason: " + ESP.getResetReason());</code></pre></p>
+<p>Essential for diagnosing field failures.</p>
+<p>---</p>
+<h2>PlatformIO Configuration</h2>
+<h3>Dual-Environment Setup</h3>
+<pre><code>[env:esp32dev]
+<p>platform = espressif32</p>
+<p>board = esp32dev</p>
+<p>framework = arduino</p>
+<p>monitor_speed = 115200</p>
+<p>lib_deps =</p>
+<p>me-no-dev/AsyncTCP @ ^1.1.1</p>
+<p>https://github.com/me-no-dev/ESPAsyncWebServer.git</p>
+<p>bblanchon/ArduinoJson@^7.0.3</p>
+<p>[env:nodemcu]</p>
+<p>platform = espressif8266</p>
+<p>board = nodemcuv2</p>
+<p>framework = arduino</p>
+<p>lib_deps =</p>
+<p>https://github.com/me-no-dev/ESPAsyncTCP.git</p>
+<p>https://github.com/me-no-dev/ESPAsyncWebServer.git</p>
+<p>bblanchon/ArduinoJson@^7.0.3</p>
+<p>OneWire</code></pre></p>
+<strong>Usage:</strong>
+<pre><code><h1>Build ESP32 version</h1>
+<p>pio run -e esp32dev</p>
+<h1>Build ESP8266 version</h1>
+<p>pio run -e nodemcu</p>
+<h1>Build both</h1>
+<p>pio run</code></pre></p>
+<p>PlatformIO automatically downloads the correct libraries for each platform.</p>
+<p>---</p>
+<h2>Extending the Template</h2>
+<h3>Adding a Custom Sensor</h3>
+<strong>1. Create sensor handler</strong> (<code>src/dht_handler.cpp</code>):
+<pre><code>#include <DHT.h>
+<p>DHT dht(DHTPIN, DHT22);</p>
+<p>void setupDHT() {</p>
+<p>dht.begin();</p>
+<p>}</p>
+<p>float readTemperature() {</p>
+<p>return dht.readTemperature();</p>
+<p>}</code></pre></p>
+<strong>2. Add HTTP route</strong> (<code>src/serverHandles.cpp</code>):
+<pre><code>void routeGetTemperature(AsyncWebServerRequest *request) {
+<p>float temp = readTemperature();</p>
+<p>String json = "{\"temperature\":" + String(temp) + "}";</p>
+<p>request->send(200, "application/json", json);</p>
+<p>}</p>
+<p>void addServerHandles() {</p>
+<p>webServer->on("/temperature", HTTP_GET, routeGetTemperature);</p>
+<p>routeDescriptions["/temperature"] = "Get current temperature (°C)";</p>
+<p>}</code></pre></p>
+<strong>3. Update main.cpp</strong>:
+<pre><code>void setup() {
+<p>commonSetup();</p>
+<p>setupDHT();</p>
+<p>addServerHandles();</p>
+<p>}</code></pre></p>
+<p>Done! Your sensor is accessible at <code>http://<device-ip>/temperature</code>.</p>
+<h3>Adding Custom Configuration</h3>
+<strong>1. Define struct</strong> (<code>src/system_config.h</code>):
+<pre><code>#pragma pack(push, 1)
+<p>struct SystemConfiguration {</p>
+<p>float temperatureOffset;    // Calibration offset</p>
+<p>uint16_t sampleIntervalMs;  // Sampling interval</p>
+<p>uint16_t checksum;</p>
+<p>};</p>
+<p>#pragma pack(pop)</code></pre></p>
+<strong>2. Calculate address</strong> (<code>src/main.cpp</code>):
+<pre><code>void setup() {
+<p>commonSetup();</p>
+<p>SYSTEM_CONFIG_ADDR = nextEepromSlot<DeviceConfiguration>(DEVICE_CONFIGURATION_EEPROM_ADDR);</p>
+<p>readSystemConfigFromEeprom();</p>
+<p>}</code></pre></p>
+<strong>3. Implement save/load</strong> (<code>src/system_config.cpp</code>):
+<pre><code>SystemConfiguration *systemConfig = nullptr;
+<p>bool readSystemConfigFromEeprom() {</p>
+<p>systemConfig = readDataFromEeprom<SystemConfiguration>(SYSTEM_CONFIG_ADDR);</p>
+<p>return (systemConfig != nullptr);</p>
+<p>}</p>
+<p>void saveSystemConfigToEeprom() {</p>
+<p>if (systemConfig != nullptr) {</p>
+<p>writeDataToEeprom<SystemConfiguration>(SYSTEM_CONFIG_ADDR, systemConfig);</p>
+<p>}</p>
+<p>}</code></pre></p>
+<p>Your configuration persists across reboots and is checksum-validated.</p>
+<p>---</p>
+<h2>Production Deployment Considerations</h2>
+<h3>Security Hardening</h3>
+<strong>Current State:</strong>
+<ul>
+<li>Configuration page uses HTTP (no authentication)</li>
+<li>WiFi credentials stored in plain text in EEPROM</li>
+</ul>
+<strong>Recommended Improvements:</strong>
+<p>1. Add HTTP Basic Auth for <code>/configureDevice</code></p>
+<p>2. Encrypt WiFi credentials in EEPROM</p>
+<p>3. Use HTTPS for the web interface (requires certificate management)</p>
+<p>4. Implement rate limiting on config endpoints</p>
+<h3>Reliability Features Already Implemented</h3>
+<p>✅ <strong>Boot loop protection</strong> — Prevents infinite crash loops</p>
+<p>✅ <strong>Watchdog timer</strong> — Reboots on hangs (30s ESP32, 8s ESP8266)</p>
+<p>✅ <strong>WiFi health checks</strong> — Detects "connected but broken" states</p>
+<p>✅ <strong>Configuration validation</strong> — Tests WiFi before saving</p>
+<p>✅ <strong>Quick restart detection</strong> — Easy entry into config mode</p>
+<p>✅ <strong>Memory tracking</strong> — 24-hour stats for leak detection</p>
+<p>✅ <strong>Reset cause logging</strong> — Diagnose field failures</p>
+<p>---</p>
+<h2>Performance Characteristics</h2>
+<strong>ESP32 (240MHz, ~320KB RAM):</strong>
+<ul>
+<li>Boot time: ~3-5 seconds</li>
+<li>WiFi connection: ~2-5 seconds</li>
+<li>OTA update check: ~1-2 seconds</li>
+<li>Memory usage: ~60KB (leaves 260KB for application)</li>
+</ul>
+<strong>ESP8266 (80MHz, ~80KB RAM):</strong>
+<ul>
+<li>Boot time: ~5-8 seconds</li>
+<li>WiFi connection: ~3-7 seconds</li>
+<li>OTA update check: ~2-4 seconds</li>
+<li>Memory usage: ~40KB (leaves 40KB for application)</li>
+</ul>
+<strong>Power Consumption:</strong>
+<ul>
+<li>ESP32: ~160mA active (WiFi enabled, sleep disabled)</li>
+<li>ESP8266: ~80mA active (WiFi enabled, sleep disabled)</li>
+</ul>
+<p>---</p>
+<h2>Lessons Learned</h2>
+<h3>1. Platform Abstraction is Worth It</h3>
+<p>The <code>src/common/</code> separation paid off immediately. When we fixed a bug in WiFi reconnection logic, it was fixed for both platforms with one change.</p>
+<h3>2. WiFi Sleep Must Be Disabled</h3>
+<p>Initially, we used default WiFi sleep settings. Result: random disconnections, serial port corruption (ESP32), and unpredictable behavior. Disabling sleep added ~30mA but made devices rock-solid.</p>
+<h3>3. Boot Loop Protection is Essential</h3>
+<p>Without it, a bug in initialization code could brick deployed devices. The quick restart counter saved us multiple times during development.</p>
+<h3>4. WebSocket Logging Changes Everything</h3>
+<p>Being able to debug deployed devices via browser is invaluable. Serial access requires physical proximity; WebSocket works from anywhere on the network.</p>
+<h3>5. Auto-Version Increment Prevents Confusion</h3>
+<p>When testing OTA updates, manual version bumps were error-prone. Auto-increment meant every build was uniquely identifiable.</p>
+<p>---</p>
+<h2>Why This Template Matters</h2>
+<strong>For Hobbyists:</strong>
+<p>Stop reinventing WiFi connection code. Clone this, add your sensor logic, and you're done.</p>
+<strong>For Prototypes:</strong>
+<p>Ship a working demo in hours instead of days. The web interface impresses clients.</p>
+<strong>For Production:</strong>
+<p>Boot loop protection, watchdog timers, health checks, and OTA updates are already battle-tested.</p>
+<strong>For Multi-Platform Projects:</strong>
+<p>Write your logic once, deploy to ESP32 (for performance) or ESP8266 (for cost) without code changes.</p>
+<p>---</p>
+<h2>Technical Metrics</h2>
+<ul>
+<li><strong>Lines of Code:</strong> ~2,500 (template code)</li>
+<li><strong>Code Reuse:</strong> 95% shared between platforms</li>
+<li><strong>Dependencies:</strong> 3 core libraries (AsyncWebServer, ArduinoJson, AsyncTCP)</li>
+<li><strong>Build Time:</strong> ~30s (ESP32), ~20s (ESP8266)</li>
+<li><strong>Flash Usage:</strong> ~300KB (ESP32), ~280KB (ESP8266)</li>
+<li><strong>Supported Boards:</strong> Any ESP32-based, any ESP8266-based</li>
+</ul>
+<p>---</p>
+<h2>Conclusion</h2>
+<p>This template solves the "last 20%" problem in embedded IoT development—the unglamorous but essential plumbing that every project needs. By providing WiFi management, configuration, OTA updates, and monitoring out of the box, it lets developers focus on what makes their project unique.</p>
+<p>The dual-platform architecture is particularly clever: write once, deploy to ESP32 (when you need speed/RAM) or ESP8266 (when you need low cost), with the same codebase.</p>
+<p>If you're building ESP-based IoT devices, this template eliminates weeks of boilerplate development and provides a robust, production-ready foundation.</p>
+<strong>Explore the code:</strong> <a href="https://github.com/rmfalco89/esp-project-template" target="_blank">github.com/rmfalco89/esp-project-template</a>
+<p>---</p>
+<strong>Related Articles:</strong>
+<ul>
+<li><a href="./esp-project-template-ota-system.md" target="_blank">Building a Secure OTA Update System for ESP32/ESP8266</a></li>
+</ul>
+<strong>Tags:</strong> #ESP32 #ESP8266 #IoT #Arduino #PlatformIO #Embedded #Template #OTA
+        </div>
+    </article>
+</body>
+</html>

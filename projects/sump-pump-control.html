@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sump Pump Manager | Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <article>
+        <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        <header>
+            <h1>Sump Pump Manager (SPM): Intelligent Dual-Pump Water Management System</h1>
+            <p class="article-meta"><strong>Repository:</strong> <a href="https://github.com/rmfalco89/sump_pump-control" target="_blank">rmfalco89/sump_pump-control</a></p>
+        </header>
+        <div class="content">
+            
+<strong>Repository:</strong> <a href="https://github.com/rmfalco89/sump_pump-control" target="_blank">rmfalco89/sump_pump-control</a>
+<strong>Platform:</strong> ESP32/ESP8266 (PlatformIO/Arduino)
+<strong>Language:</strong> C++
+<p>---</p>
+<h2>The Problem</h2>
+<p>After a power outage in early 2024, a basement flooded and the existing high-powered sump pump nearly caused a disaster—its powerful discharge overwhelmed the sewage line, causing water to back up through the kitchen sink. The homeowner wanted to add a second, gentler pump that would discharge into an irrigation tank instead, but faced several constraints:</p>
+<p>1. <strong>Physical space:</strong> Only one bucket/pit in the basement floor—no room for a second float switch</p>
+<p>2. <strong>Pump limitation:</strong> The new pump isn't self-priming, so it can't run dry</p>
+<p>3. <strong>Coordination complexity:</strong> Two pumps with different discharge points need intelligent orchestration</p>
+<p>4. <strong>Reliability:</strong> Must handle edge cases like flood scenarios, sensor failures, and relay overheating</p>
+<p>The solution needed to be robust, configurable, and capable of operating autonomously while integrating with Home Assistant for monitoring and alerts.</p>
+<p>---</p>
+<h2>The Solution</h2>
+<p>SPM is an embedded IoT controller that coordinates two sump pumps using multiple sensors and configurable operating modes. The system runs on an ESP32/ESP8266 microcontroller and exposes a web interface for configuration and monitoring.</p>
+<h3>Key Features</h3>
+<strong>Multi-Sensor Water Level Detection:</strong>
+<ul>
+<li>5 float switches at different heights (bottom, middle-bottom, middle-middle, middle-top, top)</li>
+<li>TF-Luna LIDAR sensor for precise distance measurement</li>
+<li>Configurable sensor selection for different middle-level triggers</li>
+</ul>
+<strong>Flexible Operating Modes:</strong>
+<ul>
+<li><code>AUTO</code>: Float switch-driven activation</li>
+<li><code>TIMED</code>: Run/rest cycles (e.g., 2 min on, 3 min off)</li>
+<li><code>AUTOTIMED</code>: Hybrid mode combining both</li>
+<li><code>TIMEBASED</code>: Delayed activation after sustained water level</li>
+<li><code>INACTIVE</code>: Manual override to disable</li>
+</ul>
+<strong>Safety & Monitoring:</strong>
+<ul>
+<li>Temperature monitoring on solid-state relay (SSR) to prevent overheating</li>
+<li>Flood mode detection when bucket doesn't empty within expected time</li>
+<li>Home Assistant integration for alerts and health checks</li>
+<li>Adaptive timing for time-based mode (auto-adjusts wait period based on pump performance)</li>
+</ul>
+<strong>Configuration Persistence:</strong>
+<ul>
+<li>EEPROM storage for system configuration</li>
+<li>Web-based configuration interface</li>
+<li>Emergency flood configuration that activates both pumps at maximum capacity</li>
+</ul>
+<p>---</p>
+<h2>Interesting Code Patterns</h2>
+<h3>1. State-Based Pump Operation with Adaptive Timing</h3>
+<p>The system implements a sophisticated state machine for pump control that adapts to real-world conditions:</p>
+<pre><code>// Adaptive wait time for time-based mode
+<p>if (newPump->isInTimeBasedMode() &&</p>
+<p>waterLevelSensorBottom->submerged &&</p>
+<p>millis() - waterLevelSensorBottom->lastChangedStatusMillis > waitBeforeActivatingNewPumpMillis &&</p>
+<p>!newPump->getIsAutoPumping())</p>
+<p>{</p>
+<p>newPump->setAutoPumping(true);</p>
+<p>}</p>
+<p>// Self-adjusting wait period based on performance</p>
+<p>if (newPump->getAutoPumpingOnToOffTimeMillis() < (systemConfiguration->minRunTimeNewPump - 1000)</p>
+<p>&& waitBeforeActivatingNewPumpMillis < 3 <em> 60 </em> 60 * 1000)</p>
+<p>{</p>
+<p>waitBeforeActivatingNewPumpMillis += 60 * 1000; // Pump ran too short - wait longer next time</p>
+<p>}</code></pre></p>
+<p>This adaptive behavior prevents the pump from cycling too frequently when inflow is low, extending pump life.</p>
+<h3>2. Dual-Mode Relay Abstraction</h3>
+<p>The <code>Relay</code> struct elegantly handles both standard mechanical relays and solid-state relays (SSR) with different triggering logic:</p>
+<pre><code>struct Relay
+<p>{</p>
+<p>RelayType type;</p>
+<p>uint8_t pin;</p>
+<p>bool active_high;</p>
+<p>RelayOperation currentStatus;</p>
+<p>uint64_t lastSwitchedMillis;</p>
+<p>uint64_t counterON;</p>
+<p>void power(RelayOperation operation)</p>
+<p>{</p>
+<p>if (operation == currentStatus)</p>
+<p>return;</p>
+<p>bool on = operation == ON ? true : false;</p>
+<p>byte switchValue = active_high == on ? HIGH : LOW;</p>
+<p>digitalWrite(pin, switchValue);</p>
+<p>lastSwitchedMillis = millis();</p>
+<p>currentStatus = operation;</p>
+<p>if (on)</p>
+<p>counterON++;</p>
+<p>}</p>
+<p>};</code></pre></p>
+<p>The <code>active_high</code> flag allows the same code to control both active-high and active-low relay modules, while the counter tracks usage statistics.</p>
+<h3>3. Polymorphic Pump Operation Strategy</h3>
+<p>The <code>SumpPump::operate()</code> method demonstrates a clean strategy pattern:</p>
+<pre><code>void SumpPump::operate()
+<p>{</p>
+<p>switch (control)</p>
+<p>{</p>
+<p>case INACTIVE:</p>
+<p>if (relay.currentStatus != OFF)</p>
+<p>relay.power(RelayOperation::OFF);</p>
+<p>return;</p>
+<p>case TIMED:</p>
+<p>case AUTOTIMED:</p>
+<p>timedOperation();</p>
+<p>break;</p>
+<p>case AUTO:</p>
+<p>case TIMEBASED:</p>
+<p>autoOperation();</p>
+<p>break;</p>
+<p>}</p>
+<p>}</p>
+<p>void SumpPump::timedOperation()</p>
+<p>{</p>
+<p>if (isAutoPumping)</p>
+<p>{</p>
+<p>// ON but needs rest</p>
+<p>if (relay.currentStatus == ON &&</p>
+<p>millis() - relay.lastSwitchedMillis > maxRunTimeMillis)</p>
+<p>{</p>
+<p>relay.power(RelayOperation::OFF);</p>
+<p>}</p>
+<p>// OFF and rested enough</p>
+<p>if (relay.currentStatus == OFF &&</p>
+<p>millis() - relay.lastSwitchedMillis > minStopTimeMillis)</p>
+<p>{</p>
+<p>relay.power(RelayOperation::ON);</p>
+<p>}</p>
+<p>}</p>
+<p>}</code></pre></p>
+<p>This separation allows each pump to operate in different modes simultaneously (e.g., old pump in AUTO, new pump in TIMEBASED).</p>
+<h3>4. Emergency Flood Mode with Configuration Swapping</h3>
+<p>When the system detects a flooding scenario, it dynamically reconfigures both pumps:</p>
+<pre><code>if (newPump->isTakingTooLongToEmptyBucket() || oldPump->isTakingTooLongToEmptyBucket())
+<p>{</p>
+<p>LOG_PRINTLN("!!! FLOOD MODE !!!");</p>
+<p>floodMode = true;</p>
+<p>invokeHassFloodAlert();</p>
+<p>// Swap to emergency configuration</p>
+<p>SystemConfiguration basementFloodedConfiguration =</p>
+<p>SystemConfiguration::getBasementFloodedConfiguration();</p>
+<p>configurePumps(&basementFloodedConfiguration);</p>
+<p>}</code></pre></p>
+<p>This hot-swapping of configurations without restart allows the system to respond immediately to critical situations.</p>
+<h3>5. Home Assistant Integration with Webhook Health Checks</h3>
+<p>The system maintains a heartbeat with Home Assistant for monitoring:</p>
+<pre><code>if (lastPingMillis == 0 || millis() - lastPingMillis > timeBetweenPingsMillis)
+<p>{</p>
+<p>LOG_PRINTLN("Sending ping to " + String(systemConfiguration->healthCheckAddress));</p>
+<p>request(systemConfiguration->healthCheckAddress);</p>
+<p>invokeHAWebHook(systemConfiguration->hassHealthCheckWebhookID);</p>
+<p>lastPingMillis = millis();</p>
+<p>}</code></pre></p>
+<p>This allows Home Assistant to detect if the controller goes offline and send alerts.</p>
+<p>---</p>
+<h2>Technical Highlights</h2>
+<ul>
+<li><strong>Real-time responsiveness:</strong> 50ms main loop with non-blocking async web server</li>
+<li><strong>Persistent configuration:</strong> EEPROM storage with structure packing (<code>#pragma pack(push, 1)</code>)</li>
+<li><strong>Cross-platform:</strong> Supports both ESP32 and ESP8266 via PlatformIO build targets</li>
+<li><strong>Diagnostics:</strong> Comprehensive status reporting via serial console and web interface</li>
+<li><strong>Safety-first:</strong> Multiple redundant sensors and fail-safe modes</li>
+</ul>
+<p>---</p>
+<h2>Architecture</h2>
+<pre><code>┌─────────────────────────────────────────────┐
+<p>│            ESP32 Controller                  │</p>
+<p>├─────────────────────────────────────────────┤</p>
+<p>│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │</p>
+<p>│  │  Float   │  │  LIDAR   │  │   Temp   │  │</p>
+<p>│  │ Switches │  │ Sensor   │  │  Sensor  │  │</p>
+<p>│  └────┬─────┘  └────┬─────┘  └────┬─────┘  │</p>
+<p>│       └─────────────┼─────────────┘         │</p>
+<p>│                     ▼                        │</p>
+<p>│         ┌──────────────────────┐            │</p>
+<p>│         │   Control Logic      │            │</p>
+<p>│         │  (State Machine)     │            │</p>
+<p>│         └──────────┬───────────┘            │</p>
+<p>│                    ▼                         │</p>
+<p>│       ┌───────────────────────┐             │</p>
+<p>│       │  Pump Controllers     │             │</p>
+<p>│       └──────┬─────────┬──────┘             │</p>
+<p>│              ▼         ▼                     │</p>
+<p>│         ┌────────┐ ┌────────┐               │</p>
+<p>│         │ SSR    │ │Standard│               │</p>
+<p>│         │ Relay  │ │ Relay  │               │</p>
+<p>│         └───┬────┘ └───┬────┘               │</p>
+<p>└─────────────┼──────────┼────────────────────┘</p>
+<p>▼          ▼</p>
+<p>┌────────┐ ┌────────┐</p>
+<p>│  New   │ │  Old   │</p>
+<p>│  Pump  │ │  Pump  │</p>
+<p>└────────┘ └────────┘</code></pre></p>
+<p>---</p>
+<h2>Why It's Interesting</h2>
+<p>This project exemplifies practical embedded systems development:</p>
+<p>1. <strong>Real-world problem solving:</strong> Addresses an actual home flooding risk with multiple constraints</p>
+<p>2. <strong>Sensor fusion:</strong> Combines float switches and LIDAR for robust water level detection</p>
+<p>3. <strong>Adaptive algorithms:</strong> Self-tuning timers based on observed performance</p>
+<p>4. <strong>Fail-safe design:</strong> Multiple layers of safety checks and emergency modes</p>
+<p>5. <strong>IoT integration:</strong> Home Assistant webhooks for remote monitoring and alerts</p>
+<p>6. <strong>Maintainability:</strong> Clean abstractions (Relay, SumpPump) with comprehensive logging</p>
+<p>The code demonstrates how embedded C++ can be organized for clarity without sacrificing performance—a balance often lost in Arduino projects. The separation of concerns (sensors, actuators, configuration, web server) makes the system extensible and testable.</p>
+        </div>
+    </article>
+</body>
+</html>
