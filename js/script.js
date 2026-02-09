@@ -27,15 +27,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateActiveNavLink() {
         let currentSection = '';
         const scrollPosition = window.scrollY + 100; // Offset for better detection
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
         
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            
-            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                currentSection = section.getAttribute('id');
-            }
-        });
+        // Check if we're near the bottom of the page
+        const isNearBottom = (window.scrollY + windowHeight) >= (documentHeight - 50);
+        
+        // If near bottom, activate the last section
+        if (isNearBottom) {
+            currentSection = sections[sections.length - 1].getAttribute('id');
+        } else {
+            // Otherwise, find the section currently in view
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                
+                // Check if scroll position is within this section
+                // Use a more generous range for the last section
+                if (scrollPosition >= sectionTop - 200) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+        }
         
         navLinks.forEach(link => {
             link.classList.remove('active');
