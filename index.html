@@ -3,126 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Riccardo Marino - Software Engineer portfolio showcasing embedded systems, IoT, and automation projects.">
+    <meta name="description" content="Riccardo Marino - Software Engineer specializing in embedded systems, IoT, and automation.">
     <title>Riccardo Marino | Software Engineer</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
+        <!-- Hero Section -->
         <header>
-            <h1>Riccardo Marino</h1>
-            <p>Software Engineer | Full-Stack Developer | IoT & Automation Specialist</p>
-            <div class="header-links">
-                <a href="https://github.com/rmfalco89" target="_blank">GitHub</a>
-                <a href="https://linkedin.com/in/riccardo-marino" target="_blank">LinkedIn</a>
-                <a href="mailto:rmfalco89@gmail.com">Email</a>
-                <a href="#contact">Request CV</a>
+            <div class="hero-label">Hi, my name is</div>
+            <h1 class="hero-title">Riccardo Marino.</h1>
+            <h2 class="hero-subtitle">I build things for the real world.</h2>
+            <p class="hero-description">
+                I'm a software engineer specializing in embedded systems, IoT automation, and full-stack development. 
+                Currently focused on building intelligent systems that bridge hardware and software.
+            </p>
+            <div class="hero-cta">
+                <a href="mailto:rmfalco.89@gmail.com" class="btn">Get In Touch</a>
             </div>
         </header>
 
+        <!-- Featured Projects -->
         <section id="projects">
-            <h2>Featured Projects</h2>
-            <div class="projects-grid">
-                
-                <div class="project-card" onclick="location.href='projects/sump-pump-control.html'">
-                    <h3>Sump Pump Manager (SPM)</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">ESP32</span>
-                        <span class="tech-tag">C++</span>
-                        <span class="tech-tag">IoT</span>
-                        <span class="tech-tag">Home Assistant</span>
-                    </div>
-                    <p>Intelligent dual-pump water management system with multi-sensor detection, adaptive timing, and emergency flood mode. Prevents basement flooding with sophisticated state-machine control and Home Assistant integration.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-                <div class="project-card" onclick="location.href='projects/esp-project-template-architecture.html'">
-                    <h3>ESP32 Project Template - Architecture</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">ESP32/ESP8266</span>
-                        <span class="tech-tag">PlatformIO</span>
-                        <span class="tech-tag">C++</span>
-                        <span class="tech-tag">WebServer</span>
-                    </div>
-                    <p>Production-ready IoT foundation with dual-platform support, smart WiFi management, type-safe configuration, and async web server with WebSocket logging. 95% code sharing between ESP32 and ESP8266.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-                <div class="project-card" onclick="location.href='projects/esp-project-template-ota.html'">
-                    <h3>ESP32 OTA Update System</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">ESP32</span>
-                        <span class="tech-tag">OTA</span>
-                        <span class="tech-tag">GitHub Releases</span>
-                        <span class="tech-tag">TLS</span>
-                    </div>
-                    <p>Secure over-the-air firmware update system using GitHub Releases. Features semantic version comparison, watchdog integration, rollback protection, and browser-based manual upload fallback.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-                <div class="project-card" onclick="location.href='projects/stocks-eval.html'">
-                    <h3>Stock Evaluation Automation</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Selenium</span>
-                        <span class="tech-tag">Docker</span>
-                        <span class="tech-tag">Finance</span>
-                    </div>
-                    <p>Automated fundamental stock analysis based on Phil Town's Rule #1 investing. Scrapes Morningstar, Macrotrends, and Zacks to calculate intrinsic valuations and margin of safety. Saves 60+ hours/month.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-                <div class="project-card" onclick="location.href='projects/telegram-utils.html'">
-                    <h3>Telegram Utils</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Telethon</span>
-                        <span class="tech-tag">MTProto</span>
-                        <span class="tech-tag">Async</span>
-                    </div>
-                    <p>Surgical Telegram account cleanup using MTProto API. Bulk contact deletion and chat cleanup with preview-confirm-execute safety flow. Clean async/await patterns with graceful error handling.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-                <div class="project-card" onclick="location.href='projects/smarter-home-webserver.html'">
-                    <h3>SmarterHome Webserver</h3>
-                    <div class="tech-stack">
-                        <span class="tech-tag">Django</span>
-                        <span class="tech-tag">REST API</span>
-                        <span class="tech-tag">WebSocket</span>
-                        <span class="tech-tag">Home Automation</span>
-                    </div>
-                    <p>Django-based home automation orchestration layer with Homebridge and Home Assistant integration. Features smart delta compression for sensor data and specialized mushroom growing chamber automation.</p>
-                    <span class="read-more">Read more →</span>
-                </div>
-
-            </div>
-        </section>
-
-        <section id="contact" class="contact">
-            <h2>Get in Touch</h2>
-            <p>Interested in working together? Request my CV or reach out directly.</p>
+            <h2 class="section-heading">Things I've Built</h2>
             
-            <div style="margin: 3rem 0;">
-                <a href="mailto:rmfalco89@gmail.com?subject=Portfolio%20Inquiry%20/%20CV%20Request" 
-                   class="submit-btn" 
-                   style="display: inline-block; text-decoration: none;">
-                    Email Me
+            <div class="projects-grid">
+                <a href="projects/sump-pump-control.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">📊</div>
+                        </div>
+                        <h3 class="project-title">Sump Pump Manager (SPM)</h3>
+                        <p class="project-description">
+                            Intelligent dual-pump water management system with multi-sensor detection, adaptive timing, and emergency flood mode. Prevents basement flooding with sophisticated state-machine control.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>ESP32</li>
+                            <li>C++</li>
+                            <li>IoT</li>
+                            <li>Home Assistant</li>
+                        </ul>
+                    </div>
                 </a>
-                
-                <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 1.1rem;">
-                    <strong>rmfalco89@gmail.com</strong>
-                </p>
-                
-                <p style="margin-top: 1rem; color: var(--accent); font-weight: 500;">
-                    🤖 Agent-monitored — I typically respond within minutes
-                </p>
+
+                <a href="projects/esp-project-template-architecture.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">🔧</div>
+                        </div>
+                        <h3 class="project-title">ESP32 Project Template</h3>
+                        <p class="project-description">
+                            Production-ready IoT foundation with dual-platform support, smart WiFi management, and type-safe configuration. 95% code sharing between ESP32 and ESP8266.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>ESP32/ESP8266</li>
+                            <li>PlatformIO</li>
+                            <li>WebServer</li>
+                        </ul>
+                    </div>
+                </a>
+
+                <a href="projects/esp-project-template-ota.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">🔄</div>
+                        </div>
+                        <h3 class="project-title">ESP32 OTA Update System</h3>
+                        <p class="project-description">
+                            Secure over-the-air firmware updates using GitHub Releases. Features semantic version comparison, watchdog integration, and rollback protection.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>ESP32</li>
+                            <li>OTA</li>
+                            <li>GitHub Releases</li>
+                            <li>TLS</li>
+                        </ul>
+                    </div>
+                </a>
+
+                <a href="projects/stocks-eval.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">📈</div>
+                        </div>
+                        <h3 class="project-title">Stock Evaluation Automation</h3>
+                        <p class="project-description">
+                            Automated fundamental stock analysis based on Phil Town's Rule #1 investing. Scrapes financial data to calculate intrinsic valuations. Saves 60+ hours/month.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>Python</li>
+                            <li>Selenium</li>
+                            <li>Docker</li>
+                            <li>Finance</li>
+                        </ul>
+                    </div>
+                </a>
+
+                <a href="projects/telegram-utils.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">💬</div>
+                        </div>
+                        <h3 class="project-title">Telegram Utils</h3>
+                        <p class="project-description">
+                            Surgical Telegram account cleanup using MTProto API. Bulk contact deletion and chat cleanup with preview-confirm-execute safety flow.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>Python</li>
+                            <li>Telethon</li>
+                            <li>MTProto</li>
+                            <li>Async</li>
+                        </ul>
+                    </div>
+                </a>
+
+                <a href="projects/smarter-home-webserver.html" class="project-card">
+                    <div class="project-inner">
+                        <div class="project-top">
+                            <div class="project-icon">🏠</div>
+                        </div>
+                        <h3 class="project-title">SmarterHome Webserver</h3>
+                        <p class="project-description">
+                            Django-based home automation orchestration with Homebridge and Home Assistant integration. Features smart delta compression for sensor data.
+                        </p>
+                        <ul class="project-tech-list">
+                            <li>Django</li>
+                            <li>REST API</li>
+                            <li>WebSocket</li>
+                            <li>Home Automation</li>
+                        </ul>
+                    </div>
+                </a>
             </div>
         </section>
 
-        <footer>
-            <p>&copy; 2026 Riccardo Marino. Built with care.</p>
-        </footer>
+        <!-- Contact -->
+        <section id="contact" class="contact-section">
+            <span class="contact-subtitle">What's Next?</span>
+            <h2 class="section-heading">Get In Touch</h2>
+            <p class="contact-text">
+                I'm currently open to new opportunities and interesting projects. Whether you have a question or just want to say hi, feel free to reach out!
+            </p>
+            <p class="contact-text" style="color: var(--green); font-family: var(--font-mono); margin-bottom: 10px;">
+                🤖 Agent-monitored — I typically respond within minutes
+            </p>
+            <a href="mailto:rmfalco.89@gmail.com?subject=Portfolio%20Inquiry" class="btn email-link">
+                Say Hello
+            </a>
+        </section>
     </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/rimarino/" target="_blank" title="LinkedIn">
+                <svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+            </a>
+            <a href="mailto:rmfalco.89@gmail.com" title="Email">
+                <svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            </a>
+        </div>
+        <p>Built by Riccardo Marino</p>
+    </footer>
 </body>
 </html>
