@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Shroomies - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Magic Shroomies</h1>
+            <p class="subtitle">Arduino-Based Fruiting Chamber Controller</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/magic-shroomies" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Arduino</span>
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">PlatformIO</span>
+                    <span class="tech-tag">DHT22</span>
+                    <span class="tech-tag">STM32</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Mushroom cultivation requires precise environmental control during the fruiting stage. A <strong>Fruiting Chamber (FC)</strong> must maintain:</p>
+            <ul>
+                <li><strong>Constant temperature</strong> specific to the mushroom species (typically around 70°F / 21°C)</li>
+                <li><strong>High relative humidity</strong> (often 90-95% for optimal fruiting)</li>
+                <li><strong>Fresh air exchange (FAE)</strong> to prevent CO₂ buildup and promote healthy growth</li>
+                <li><strong>Gentle heat distribution</strong> to avoid "hot spots" that could damage delicate mycelium</li>
+            </ul>
+            <p>Manual monitoring and adjustment is tedious, error-prone, and doesn't scale well for hobbyist cultivators who want to "set and forget" their fruiting chambers.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p><strong>Magic Shroomies</strong> is an Arduino-based firmware that orchestrates multiple environmental control systems:</p>
+            
+            <div class="feature-card">
+                <h3>Hardware Components</h3>
+                <ul>
+                    <li><strong>DHT22</strong> temperature & humidity sensor for environmental monitoring</li>
+                    <li><strong>Heat lamp</strong> for temperature control</li>
+                    <li><strong>Fan on heat lamp</strong> for even heat distribution</li>
+                    <li><strong>Ultrasonic humidifier</strong> for maintaining high RH</li>
+                    <li><strong>FAE (Fresh Air Exchange) fan</strong> for periodic air circulation</li>
+                    <li><strong>Ice detection button</strong> for manual cooling assistance</li>
+                    <li><strong>OLED display</strong> for real-time status monitoring</li>
+                    <li><strong>Buzzer</strong> for critical alerts</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Control Strategy</h2>
+            <p>The system implements a <strong>hysteresis-based control loop</strong> that runs every 5 seconds:</p>
+            
+            <div class="feature-card">
+                <h3>1. Temperature Management</h3>
+                <p>The heat lamp operates in <strong>30-second on/off cycles</strong> to prevent overheating and ensure gentle warming. When cooling down, the system:</p>
+                <ul>
+                    <li>Switches off the heat lamp</li>
+                    <li>Runs the fan at high speed for 2 minutes</li>
+                    <li>Gradually dissipates residual heat</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Humidity Control</h3>
+                <p>The humidifier has a <strong>maximum activity period of 60 seconds</strong> with a 30-second cooldown to prevent water condensation issues.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Fresh Air Exchange (FAE)</h3>
+                <p>Two FAE patterns:</p>
+                <ul>
+                    <li><strong>Long cycle:</strong> Every 4 hours, runs for 2 minutes at full speed</li>
+                    <li><strong>Short push:</strong> Every 15 minutes, 5-second burst to circulate air and distribute humidity</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Ice Cooling Mode</h3>
+                <p>A unique feature allows manual intervention with ice packs. When ice is detected, the system uses the internal fan to circulate cool air throughout the chamber, with automatic timer to track when the ice has melted (5 hours).</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <div class="feature-card">
+                <h3>Object-Oriented Design on Embedded System</h3>
+                <p>The firmware uses <strong>proper OOP abstraction</strong> despite Arduino's resource constraints, creating clean separation of concerns:</p>
+                <ul>
+                    <li><code>FruitingChamber</code> coordinates high-level logic</li>
+                    <li><code>HeatBlock</code> manages heating cycles</li>
+                    <li><code>DHTSensor</code> wraps the Adafruit DHT library</li>
+                    <li><code>GUI</code> handles display and button input</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Memory-Conscious Development</h3>
+                <p>With only <strong>2048 bytes of RAM</strong> on the ATmega328, memory management is critical. The project actively monitors free memory and optimizes string handling using:</p>
+                <ul>
+                    <li>Flash memory for constant strings (<code>F()</code> macro)</li>
+                    <li>Stack-allocated character buffers</li>
+                    <li>Careful string concatenation</li>
+                </ul>
+                <p><strong>Final memory footprint:</strong></p>
+                <ul>
+                    <li><strong>RAM:</strong> 45.8% (937 bytes)</li>
+                    <li><strong>Flash:</strong> 82.5% (25,346 bytes)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>State Machine for Heat Lamp</h3>
+                <p>The <code>HeatBlock</code> implements a <strong>finite state machine</strong> with three distinct modes:</p>
+                <ol>
+                    <li><strong>Heating Up:</strong> Lamp cycles 30s on / 30s off, fan at normal speed</li>
+                    <li><strong>Cooling Down:</strong> Lamp off, fan at high speed for 2 minutes</li>
+                    <li><strong>Moving Air:</strong> Lamp off, fan at normal speed (for ice cooling)</li>
+                </ol>
+                <p>This prevents thermal shock to mushrooms while maintaining efficient temperature control.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Fail-Safe Mechanisms</h3>
+                <p>The system includes multiple safety checks:</p>
+                <ul>
+                    <li><strong>Sensor failure detection</strong> with automatic shutdown and SOS buzzer</li>
+                    <li><strong>Critical overheat protection</strong> that immediately shuts off heat lamp</li>
+                    <li><strong>Watchdog monitoring</strong> for system stability</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Multi-Platform Support</h2>
+            <p>The project uses <strong>PlatformIO</strong> and supports both:</p>
+            <ul>
+                <li><strong>Arduino Nano</strong> (ATmega328) for production (~$3 cost-effective deployment)</li>
+                <li><strong>STM32 Nucleo F411RE</strong> for development/testing (powerful debugging with ST-Link)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Serial Command Interface</h2>
+            <p>Debug mode enables real-time control and monitoring, allowing live parameter tuning without reflashing firmware—crucial for calibrating different mushroom species.</p>
+        </section>
+        
+        <footer class="project-footer">
+            <p>This project demonstrates <strong>practical embedded systems engineering</strong> for a niche but growing hobby, bringing automation and precision to mushroom cultivation.</p>
+        </footer>
+    </article>
+</body>
+</html>

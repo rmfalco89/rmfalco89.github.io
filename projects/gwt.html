@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Worktree Manager - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Git Worktree Manager (gwt)</h1>
+            <p class="subtitle">Streamlined Git Worktree Workflows</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/gwt" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Zsh</span>
+                    <span class="tech-tag">Shell Script</span>
+                    <span class="tech-tag">Git</span>
+                    <span class="tech-tag">AWK</span>
+                    <span class="tech-tag">VSCode</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Git worktrees allow multiple working directories from a single repository—perfect for working on multiple branches simultaneously. However, the native commands are cumbersome:</p>
+            
+            <div class="code-block">
+                <pre>
+git worktree add ../feature-branch -b feature-branch main
+git worktree remove ../feature-branch
+git worktree list
+                </pre>
+            </div>
+            
+            <p>Developers face:</p>
+            <ul>
+                <li>Complex commands to remember</li>
+                <li>Manual worktree location management</li>
+                <li>No consistent naming conventions</li>
+                <li>Repetitive setup tasks per worktree</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p>gwt introduces a project-centric workflow that abstracts complexity behind an elegant CLI:</p>
+            
+            <div class="feature-card">
+                <h3>Interactive Workflow</h3>
+                <div class="code-block">
+                    <pre>
+$ gwt add cadence
+gwt v0.1.0
+
+Base branch [main]: 
+New branch name: feature-auth
+Copy .vscode settings? [Y/n]: 
+Creating worktree at .../cadence_feature-auth...
+✓ Worktree created successfully
+✓ sessions.json linked
+Running gwt_customization.sh...
+To start working:
+  code .../cadence_feature-auth
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Multiple repository management:</strong> Register projects once, reuse forever</li>
+                    <li><strong>Naming conventions:</strong> Worktrees follow <code>{project}_{branch}</code> pattern</li>
+                    <li><strong>Interactive prompts:</strong> Guides users with sensible defaults</li>
+                    <li><strong>VSCode integration:</strong> Terminal session templates for all worktrees</li>
+                    <li><strong>Safety checks:</strong> Prevents deletion of uncommitted changes</li>
+                    <li><strong>Customization hooks:</strong> Project-specific setup scripts</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture Highlights</h2>
+            
+            <div class="feature-card">
+                <h3>Symlink-Based Installation</h3>
+                <p>The installer creates symlinks instead of copying files:</p>
+                <div class="code-block">
+                    <pre>
+ln -sf "${SCRIPT_DIR}/gwt.zsh" "${GWT_HOME}/gwt.zsh"
+ln -sf "${SCRIPT_DIR}/.vscode/sessions.json" \
+       "${GWT_HOME}/.vscode/sessions.json"
+                    </pre>
+                </div>
+                <p><strong>Benefits:</strong></p>
+                <ul>
+                    <li>Updates via <code>git pull</code> are immediately available</li>
+                    <li>No reinstallation needed</li>
+                    <li>Single source of truth in the repository</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Directory Preservation</h3>
+                <p>Every command saves and restores the working directory, preventing the antipattern of unexpectedly changing the user's context.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Git Command Abstraction</h3>
+                <p>The <code>_gwt_git()</code> helper searches multiple common git installation paths, handling PATH inconsistencies across different shells and environments (especially macOS with Homebrew).</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Configuration Format</h2>
+            <p>Projects are stored in <code>~/.gwt/gwt-projects</code> with a colon-delimited format:</p>
+            
+            <div class="code-block">
+                <pre>
+project_name:project_path:git_dir
+
+# Example:
+cadence:/Users/rmarino/projects/cadence:/Users/rmarino/projects/cadence/cadence.git
+                </pre>
+            </div>
+            
+            <p>Supports legacy two-field format while adding git directory path for explicit configuration.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Customization Hooks</h2>
+            <p>gwt automatically creates and executes a <code>gwt_customization.sh</code> script in the project root:</p>
+            
+            <div class="code-block">
+                <pre>
+export GWT_PROJECT_NAME="${project_name}"
+export GWT_PROJECT_PATH="${project_path}"
+export GWT_WORKTREE_DIR="${worktree_dir}"
+export GWT_BRANCH_NAME="${new_branch}"
+export GWT_BASE_BRANCH="${base_branch}"
+export GWT_GIT_DIR="${git_dir}"
+
+cd "${project_path}"
+"${customization_script}"
+                </pre>
+            </div>
+            
+            <p>Allows per-project automation like:</p>
+            <ul>
+                <li>Installing dependencies (<code>npm install</code>, <code>pip install -r requirements.txt</code>)</li>
+                <li>Copying environment files</li>
+                <li>Running database migrations</li>
+                <li>Setting up project-specific tooling</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Worktree Detection</h2>
+            <p>The <code>_gwt_find_worktree()</code> function parses git's porcelain output for structured data:</p>
+            
+            <div class="code-block">
+                <pre>
+_gwt_git --git-dir="${git_dir}" worktree list --porcelain | \
+    awk -v branch="${branch_name}" '
+        /^worktree / { path = substr($0, 10) }
+        /^branch / {
+            br = substr($0, 8)
+            gsub(/^refs\/heads\//, "", br)
+            if (br == branch) {
+                print path
+                exit
+            }
+        }
+    '
+                </pre>
+            </div>
+            
+            <p>Shows careful use of AWK for structured parsing of git's machine-readable output.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Safety Features</h2>
+            
+            <div class="feature-card">
+                <h3>Remove Command Checks</h3>
+                <p>Before deletion, verifies no uncommitted changes:</p>
+                <div class="code-block">
+                    <pre>
+if ! _gwt_git diff-index --quiet HEAD -- 2>/dev/null || 
+   [[ -n $(_gwt_git ls-files --others --exclude-standard) ]]; then
+    echo "Error: Worktree has uncommitted changes"
+    _gwt_git status --short
+    echo "Use 'gwt remove --force' to force removal"
+    return 1
+fi
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>VSCode Integration</h2>
+            <p>The <code>sessions.json</code> template allows customizing terminal layouts for all worktrees:</p>
+            
+            <div class="code-block">
+                <pre>
+{
+    "sessions": {
+        "Toolbus": [
+            {
+                "name": "C. 1",
+                "autoExecuteCommands": true,
+                "commands": ["claude"]
+            },
+            {
+                "name": "Backend",
+                "commands": ["task backend:run"]
+            }
+        ]
+    }
+}
+                </pre>
+            </div>
+            
+            <p>Every new worktree gets these terminal sessions automatically via symlink.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Import Function</h2>
+            <p>The <code>gwt import</code> command finds worktrees that don't follow naming conventions and offers to rename them—perfect for migrating existing worktrees to gwt's managed system.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Use Cases</h2>
+            
+            <div class="feature-card">
+                <h3>Microservices Development</h3>
+                <p>Work on multiple services simultaneously without switching contexts.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Feature Development + Code Review</h3>
+                <p>Active development in one worktree while reviewing PRs in another—no branch switching needed.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Long-Running Tests</h3>
+                <p>Run benchmarks in one worktree while continuing development in another.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Learning Opportunities</h2>
+            
+            <div class="feature-card">
+                <h3>Shell Scripting Best Practices</h3>
+                <ul>
+                    <li><strong>Subcommand dispatch pattern</strong> via case statements</li>
+                    <li><strong>Helper function namespacing</strong> with <code>_gwt_</code> prefix</li>
+                    <li><strong>Config file parsing</strong> with IFS and read</li>
+                    <li><strong>AWK for structured text processing</strong></li>
+                    <li><strong>Subprocess isolation</strong> with <code>( ... )</code> subshells</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Git Internals</h3>
+                <ul>
+                    <li>Understanding <strong>bare repositories</strong></li>
+                    <li>Working with <strong>porcelain vs plumbing</strong> commands</li>
+                    <li>Managing <strong>remote fetch refspecs</strong></li>
+                    <li><strong>Worktree lifecycle management</strong></li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Project Stats</h2>
+            <ul class="highlights-list">
+                <li><strong>~850 lines</strong> of well-architected Zsh code</li>
+                <li><strong>Zero dependencies</strong> beyond git and standard Unix tools</li>
+                <li><strong>Idempotent operations</strong> (re-running install.sh is safe)</li>
+                <li><strong>Progressive disclosure</strong> of complexity</li>
+                <li><strong>Escape hatches</strong> (--force flags, manual overrides)</li>
+            </ul>
+        </section>
+        
+        <footer class="project-footer">
+            <p>gwt is an excellent example of a "quality of life" tool that transforms a powerful but complex git feature into a delightful daily workflow.</p>
+        </footer>
+    </article>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Tank Controller - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Smart Garden Pressure Tank Controller</h1>
+            <p class="subtitle">Intelligent Pump Protection System</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/pressure-tank-controller" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">ESP8266/ESP32</span>
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">ADS1115</span>
+                    <span class="tech-tag">Home Assistant</span>
+                    <span class="tech-tag">RMS Current Sensing</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Traditional pressure tank systems for gardens face a dangerous scenario: when the water source (well, cistern, etc.) runs dry, the pump continues running without water flow. This "dry running" can quickly damage or destroy the pump. Manual monitoring isn't practical, especially for remote installations or vacation properties.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p>This ESP8266-based controller acts as an intelligent watchdog between the power source and the pump, using multiple sensors to detect problematic conditions:</p>
+            
+            <div class="feature-card">
+                <h3>Detection System</h3>
+                <ul>
+                    <li><strong>Current sensing</strong> via ADS1115 ADC to detect when the pump is running</li>
+                    <li><strong>Flow switch</strong> to verify water is actually moving</li>
+                    <li><strong>Smart logic</strong> that combines both signals to detect dry-run conditions</li>
+                    <li><strong>Automatic shutoff</strong> when water flow stops despite pump operation</li>
+                    <li><strong>Relay failsafe</strong> that double-checks the relay actually turned off</li>
+                    <li><strong>Home Assistant integration</strong> for remote monitoring and emergency control</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>RMS Current Measurement</h2>
+            <p>The system uses true RMS current calculation to accurately measure AC pump current:</p>
+            
+            <div class="code-block">
+                <pre>
+// Sample AC waveform at 860 SPS
+for (int i = 0; i < 50; i++) {
+    voltage = adc0 * multiplier;
+    sumOfSquares += voltage * voltage;
+    delayMicroseconds(1163); // Sample different points
+}
+float rmsVoltage = sqrt(sumOfSquares / 50);
+float current = rmsVoltage * calibrationFactor;
+                </pre>
+            </div>
+            
+            <p>The 1163μs delay ensures sampling across the entire AC waveform. With 50 samples, this provides reliable RMS values without requiring expensive dedicated IC chips.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Multi-Stage Safety Logic</h2>
+            <p>The main control loop implements a sophisticated state machine:</p>
+            
+            <div class="feature-card">
+                <h3>Operational Flow</h3>
+                <ol>
+                    <li><strong>Pump detected running</strong> (current > threshold)</li>
+                    <li><strong>Wait 3 seconds</strong> for water pressure to build</li>
+                    <li><strong>Check flow switch</strong> to verify water is moving</li>
+                    <li><strong>If no flow detected:</strong>
+                        <ul>
+                            <li>Turn relay OFF immediately</li>
+                            <li>Wait 2 seconds</li>
+                            <li>Measure current again to verify relay worked</li>
+                            <li>If current still present → Emergency webhook to Home Assistant</li>
+                        </ul>
+                    </li>
+                    <li><strong>Re-enable</strong> after configurable minimum wait time</li>
+                </ol>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Brilliant Safety Features</h3>
+                <ul>
+                    <li><strong>3-second startup delay:</strong> Allows time for water pressure to build</li>
+                    <li><strong>Relay failsafe check:</strong> Detects stuck/faulty relays</li>
+                    <li><strong>Emergency HA webhook:</strong> Triggers external shutoff if relay fails</li>
+                    <li><strong>Configurable retry delay:</strong> Prevents rapid cycling</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Home Assistant Integration</h2>
+            <p>The system maintains bidirectional communication with Home Assistant:</p>
+            
+            <div class="feature-card">
+                <h3>Outbound (Controller → HA)</h3>
+                <ul>
+                    <li>Binary sensor state updates (pump on/off)</li>
+                    <li>Webhook triggers for health checks</li>
+                    <li>Emergency shutoff webhook on relay failure</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Configuration</h3>
+                <p>All settings stored in EEPROM:</p>
+                <ul>
+                    <li>Home Assistant server address and long-lived token</li>
+                    <li>Binary sensor ID for state updates</li>
+                    <li>Health check and emergency webhook IDs</li>
+                    <li>Pump timing parameters (max run time, min stop time)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Relay Abstraction</h2>
+            <p>The relay handler provides a clean abstraction supporting both standard and solid-state relays:</p>
+            
+            <ul class="highlights-list">
+                <li><strong>Idempotent operations:</strong> Prevents unnecessary toggling</li>
+                <li><strong>Polarity configuration:</strong> Active-high/active-low support</li>
+                <li><strong>Usage tracking:</strong> Counts how many times turned on</li>
+                <li><strong>Timestamp tracking:</strong> For diagnostics and logging</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Why Dual-Sensor Approach Works</h2>
+            
+            <div class="feature-card">
+                <h3>Current Measurement Alone</h3>
+                <p>✗ Can't detect dry-running (pump still draws current without water)</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Flow Switch Alone</h3>
+                <p>✗ Can't detect pump electrical failure</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Combined System</h3>
+                <p>✓ Detects all failure modes:</p>
+                <ul>
+                    <li>Dry-run: Current YES, Flow NO → Shutoff</li>
+                    <li>Pump failure: Current NO, Flow NO → Normal (pump off)</li>
+                    <li>Normal operation: Current YES, Flow YES → Continue</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Calibrated Delays</h2>
+            <p>The timing isn't arbitrary:</p>
+            <ul>
+                <li><strong>3s wait after pump start:</strong> Allows mechanical systems to stabilize</li>
+                <li><strong>2s relay verification:</strong> Ensures relay contacts have fully opened/closed</li>
+                <li><strong>Prevents race conditions</strong> in AC current measurement</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Template-Based EEPROM</h2>
+            <p>Using C++ templates (<code>.tpp</code> file) for EEPROM handling provides type-safe, reusable configuration storage across multiple devices.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Home Assistant Automation Possibilities</h2>
+            <p>With this integration, you can create powerful automations:</p>
+            <ul>
+                <li><strong>Notifications</strong> when pump stops due to dry-run</li>
+                <li><strong>Alerts</strong> if emergency shutoff triggers (relay failure)</li>
+                <li><strong>Monitoring</strong> of pump usage statistics</li>
+                <li><strong>Graphs</strong> of pump on-time and cycle frequency</li>
+                <li><strong>Remote control</strong> to manually toggle pump</li>
+                <li><strong>Integration</strong> with weather forecasts (don't water if rain expected)</li>
+            </ul>
+        </section>
+        
+        <footer class="project-footer">
+            <p>This project exemplifies practical embedded systems design: solving real problems, robust safety mechanisms, clean architecture, and smart integration with existing platforms.</p>
+        </footer>
+    </article>
+</body>
+</html>
