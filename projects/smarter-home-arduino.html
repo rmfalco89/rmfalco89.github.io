@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmarterHome Arduino - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>SmarterHome Arduino</h1>
+            <p class="subtitle">IoT Sensor Network for Apple HomeKit Integration</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/smarterHome-arduino" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">ESP8266</span>
+                    <span class="tech-tag">DHT11</span>
+                    <span class="tech-tag">Homebridge</span>
+                    <span class="tech-tag">Apple HomeKit</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>SmarterHome Arduino is the embedded microcontroller component of the SmarterHome ecosystem. It's an ESP8266-based IoT sensor device that reads temperature and humidity data, sends it to the SmarterHome webserver, which then integrates with Homebridge to expose the data in Apple's Home app.</p>
+            <p>This is the "sensor layer" of the three-component SmarterHome system, designed to extend Apple HomeKit with custom sensor nodes while maintaining professional reliability and maintainability.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Three-Component Architecture</h2>
+            <div class="architecture-diagram">
+                <pre>
+┌─────────────────────────────────────────────────────────┐
+│           SmarterHome Ecosystem                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────────────┐      HTTP POST (temp/RH)         │
+│  │  ESP8266 Node    │ ─────────────────────────────>   │
+│  │  (This Project)  │                                   │
+│  │                  │      HTTP Response (commands)     │
+│  │  - DHT11 Sensor  │ <─────────────────────────────   │
+│  │  - Moving Avg    │                                   │
+│  │  - OTA Updates   │         ┌─────────────────────┐  │
+│  └──────────────────┘         │  Django Webserver   │  │
+│                                │  (Orchestration)    │  │
+│                                │                     │  │
+│                                │  - Threshold Logic  │  │
+│                                │  - Data Storage     │  │
+│                                │  - Control Commands │  │
+│                                └─────────┬───────────┘  │
+│                                          │              │
+│                                          │ REST API     │
+│                                          ▼              │
+│                                ┌─────────────────────┐  │
+│                                │    Homebridge       │  │
+│                                │  (HomeKit Bridge)   │  │
+│                                │                     │  │
+│                                │  - Accessories      │  │
+│                                │  - Virtual Sensors  │  │
+│                                └─────────┬───────────┘  │
+│                                          │              │
+│                                          │ HomeKit      │
+│                                          ▼              │
+│                                ┌─────────────────────┐  │
+│                                │    Apple Home App   │  │
+│                                │  (iOS/macOS/tvOS)   │  │
+│                                └─────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Core Features</h2>
+            
+            <div class="feature-card">
+                <h3>Zero-Touch Configuration via Captive Portal</h3>
+                <p>On first boot, the device automatically enters AP (Access Point) mode:</p>
+                <ul>
+                    <li>Broadcasts its own WiFi network</li>
+                    <li>Captive portal accessible at <code>arduino.local</code></li>
+                    <li>Web interface for setting WiFi credentials, device name, server IP, and GitHub token</li>
+                    <li>Configuration stored in EEPROM for persistence</li>
+                    <li>No USB cable or serial connection required after initial flash</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Moving Average Filter for Stable Readings</h3>
+                <p>DHT11 sensors can be noisy. The code implements a 5-measurement moving average:</p>
+                <ul>
+                    <li>Reads temperature and humidity every 10 seconds</li>
+                    <li>Stores last 5 readings in circular buffer</li>
+                    <li>Reports average to server (smooths out sensor noise)</li>
+                    <li>Prevents false triggers from momentary fluctuations</li>
+                </ul>
+                <div class="code-block">
+                    <pre>
+const int8_t MOVING_AVG_WINDOW_SIZE = 5;
+Measurement measurements[MOVING_AVG_WINDOW_SIZE];
+
+void getDHTAvg(float &temp, float &humidity) {
+    float sum_temp = 0;
+    float sum_rh = 0;
+    for (int8_t i = 0; i < MOVING_AVG_WINDOW_SIZE; i++) {
+        sum_temp += measurements[i].temp;
+        sum_rh += measurements[i].rh;
+    }
+    temp = sum_temp / MOVING_AVG_WINDOW_SIZE;
+    humidity = sum_rh / MOVING_AVG_WINDOW_SIZE;
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Over-The-Air (OTA) Firmware Updates</h3>
+                <p>Supports remote firmware updates without physical access:</p>
+                <ul>
+                    <li>Checks GitHub releases every 30 minutes</li>
+                    <li>Authenticates using stored GitHub token</li>
+                    <li>Downloads and flashes new firmware automatically</li>
+                    <li>Reboots with updated code</li>
+                    <li>Perfect for sensors installed in hard-to-reach locations</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Watchdog Timer for Reliability</h3>
+                <p>30-second hardware watchdog ensures device recovery:</p>
+                <ul>
+                    <li>Automatically reboots if code hangs or crashes</li>
+                    <li>Fed regularly in main loop</li>
+                    <li>Critical for long-term deployment reliability</li>
+                </ul>
+                <div class="code-block">
+                    <pre>
+void setup() {
+    ESP.wdtEnable(30000);  // 30 second timeout
+    // ... rest of setup
+}
+
+void loop() {
+    ESP.wdtFeed();  // Reset watchdog timer
+    // ... rest of loop
+}
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Device Configuration Structure</h2>
+            <p>The device stores all configuration in EEPROM:</p>
+            <div class="code-block">
+                <pre>
+struct DeviceConfiguration {
+    char deviceName[20];           // "bedroom_sensor"
+    char ssid[30];                 // WiFi network name
+    char password[24];             // WiFi password
+    char smartHomeServerIP[25];    // Django server IP
+    char githubAuthToken[100];     // For OTA updates
+    int16_t smartHomeServerPort;   // Usually 8181
+    int8_t readingInterval;        // Seconds between reports
+};
+                </pre>
+            </div>
+            <p>This struct is read on boot and persists across power cycles. Configuration can be modified via web interface at <code>&lt;device_name&gt;/configure</code> or wiped at <code>&lt;device_name&gt;/voidconfig</code>.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Operational Modes</h2>
+            
+            <div class="feature-card">
+                <h3>MODE_CONFIGURE_DEVICE</h3>
+                <p>Entered when:</p>
+                <ul>
+                    <li>First boot (no configuration in EEPROM)</li>
+                    <li>User navigates to <code>/voidconfig</code></li>
+                    <li>WiFi connection fails after multiple attempts</li>
+                </ul>
+                <p>Device becomes an access point, serves configuration web page.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>MODE_NORMAL</h3>
+                <p>Standard operational mode:</p>
+                <ul>
+                    <li>Connects to configured WiFi network</li>
+                    <li>Reads DHT sensor every 10 seconds (stores in moving average)</li>
+                    <li>Sends average reading to server at configured interval (e.g., every 2 minutes)</li>
+                    <li>Checks for OTA updates every 30 minutes</li>
+                    <li>Feeds watchdog timer continuously</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>HTTP Endpoints</h2>
+            <p>The device exposes several endpoints for monitoring and control:</p>
+            <ul class="highlights-list">
+                <li><code>/</code> — Status page with current readings</li>
+                <li><code>/configure</code> — Modify configuration without wiping</li>
+                <li><code>/voidconfig</code> — Wipe configuration, return to AP mode</li>
+                <li><code>/readDht</code> — Get current temperature and humidity reading</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Communication Protocol</h2>
+            <p><strong>Device → Server (POST):</strong></p>
+            <div class="code-block">
+                <pre>
+POST http://&lt;server-ip&gt;:8181/homebridgecomm/reading/&lt;device_name&gt;
+Content-Type: application/json
+
+{
+  "temp": 72.5,
+  "rh": 65.3
+}
+                </pre>
+            </div>
+            <p><strong>Server → Device (Response):</strong></p>
+            <div class="code-block">
+                <pre>
+HTTP/1.1 200 OK
+
+Turn heater ON
+                </pre>
+            </div>
+            <p>Or:</p>
+            <div class="code-block">
+                <pre>
+HTTP/1.1 200 OK
+
+no action
+                </pre>
+            </div>
+            <p>The server responds with plain-text commands based on threshold logic. The device can act on these commands (though this particular implementation focuses on sensing, with actuation handled by Homebridge-controlled devices).</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Hardware Specifications</h2>
+            <p><strong>Microcontroller:</strong> ESP8266 (NodeMCU Lolin board)</p>
+            <p><strong>Sensor:</strong> DHT11 Temperature & Humidity</p>
+            <ul>
+                <li>Temperature range: 0-50°C (±2°C accuracy)</li>
+                <li>Humidity range: 20-90% RH (±5% accuracy)</li>
+                <li>Sampling rate: 1Hz (one reading per second max)</li>
+            </ul>
+            <p><strong>Power:</strong> 5V via micro-USB or external supply</p>
+            <p><strong>Connectivity:</strong> 802.11 b/g/n WiFi (2.4GHz)</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Deployment</h2>
+            <p>This is production code running 24/7 in real homes:</p>
+            <ul class="highlights-list">
+                <li><strong>Multiple rooms:</strong> Bedroom, living room, basement sensors all running this code</li>
+                <li><strong>Long-term stability:</strong> Watchdog timer ensures recovery from transient failures</li>
+                <li><strong>Remote management:</strong> OTA updates mean no physical access needed for bug fixes</li>
+                <li><strong>Apple Home integration:</strong> Readings appear in Home app alongside commercial smart home devices</li>
+                <li><strong>Threshold automation:</strong> Server triggers heaters/humidifiers based on sensor data</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Organization</h2>
+            <p>The codebase is cleanly separated into logical modules:</p>
+            <ul class="highlights-list">
+                <li><code>main.cpp</code> — Main loop, mode switching, watchdog feeding</li>
+                <li><code>dht_handler.cpp/h</code> — Sensor reading, moving average calculation</li>
+                <li><code>http_handler.cpp/h</code> — HTTP server, endpoints, server communication</li>
+                <li><code>ota_handler.cpp/h</code> — GitHub-based OTA update logic</li>
+                <li><code>device_configuration.cpp/h</code> — Configuration structs and persistence</li>
+                <li><code>eeprom_utils.cpp/h/tpp</code> — Template-based EEPROM read/write utilities</li>
+            </ul>
+            <p>This separation makes the code maintainable and easy to extend with additional sensors or features.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Integration with SmarterHome Ecosystem</h2>
+            <p>This Arduino code is part of a larger system:</p>
+            <ol>
+                <li><strong>ESP8266 nodes</strong> (this project) collect sensor data</li>
+                <li><strong>Django webserver</strong> orchestrates devices, applies threshold logic, stores historical data</li>
+                <li><strong>Homebridge</strong> exposes devices and virtual sensors to Apple HomeKit</li>
+            </ol>
+            <p>The result: Custom sensors and automation logic seamlessly integrated with Apple's Home app, alongside commercial smart home devices.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            <ul class="highlights-list">
+                <li><strong>Moving average filter</strong> — Smooths noisy sensor readings</li>
+                <li><strong>Captive portal configuration</strong> — Zero-touch setup via web interface</li>
+                <li><strong>EEPROM persistence</strong> — Configuration survives power cycles</li>
+                <li><strong>OTA updates</strong> — Remote firmware updates from GitHub</li>
+                <li><strong>Watchdog timer</strong> — Automatic recovery from hangs</li>
+                <li><strong>Mode-based state machine</strong> — Clean separation of configuration vs. normal operation</li>
+                <li><strong>Modular code structure</strong> — Easy to extend and maintain</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Why It Matters</h2>
+            <p>This project demonstrates how to build <strong>production-ready IoT sensor nodes</strong> that integrate with larger home automation systems:</p>
+            <ul class="highlights-list">
+                <li><strong>Reliability:</strong> Watchdog timers, error handling, fail-safe modes</li>
+                <li><strong>Maintainability:</strong> OTA updates, web-based configuration, clean code structure</li>
+                <li><strong>User experience:</strong> Zero-touch setup, seamless Apple Home integration</li>
+                <li><strong>Signal processing:</strong> Moving average filter for stable readings</li>
+                <li><strong>Real-world deployment:</strong> Running 24/7 in production environments</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>
