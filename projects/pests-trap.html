@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Basil Cat Trap - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Tomato Basil Cat Trap</h1>
+            <p class="subtitle">Automated Humane Wildlife Management with ESP32 and Home Assistant</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/Pests_trap" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">ESP32</span>
+                    <span class="tech-tag">PlatformIO</span>
+                    <span class="tech-tag">HC-SR04</span>
+                    <span class="tech-tag">Home Assistant</span>
+                    <span class="tech-tag">WebSocket</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>The <strong>Tomato Basil Cat Trap</strong> is an ESP32-based automated trap controller designed for humane wildlife management. It uses dual ultrasonic distance sensors to detect when an animal is fully inside the trap, then triggers a relay-controlled DC motor to spring the trap doors shut. The system integrates with Home Assistant for notifications and remote monitoring, making it perfect for managing feral cats or other pests that need to be relocated safely.</p>
+            <p><strong>Key Philosophy:</strong> This is a humane solution for wildlife that refuses to coexist peacefully. Once trapped, animals should be relocated to safe environments where they can thrive—never harmed.</p>
+            <blockquote>
+                <p><em>Animals are amazing manifestations of nature and we must love and respect them. This trap is intended solely for usage with pests that refuse to co-live peacefully with humans, their pets, or other animals. Once trapped, don't cause any harm to them, but rather relocate them in a safe place where they can conduct their best life without causing problems to other humans or animals.</em></p>
+            </blockquote>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Problem It Solves</h2>
+            <p>Traditional live traps have several issues:</p>
+            <ul>
+                <li><strong>Poor timing:</strong> Manual triggers or simple sensors activate too early or too late</li>
+                <li><strong>False triggers:</strong> Wind, leaves, or partial entry can waste bait and effort</li>
+                <li><strong>No monitoring:</strong> You only know the trap worked when you physically check it</li>
+                <li><strong>Missed opportunities:</strong> Animals can exit before the trap springs</li>
+            </ul>
+            <p>The Tomato Basil Cat Trap solves these problems with dual-sensor validation, automated triggering, instant notifications, and remote monitoring capabilities.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>System Architecture</h2>
+            
+            <div class="feature-card">
+                <h3>Hardware Components</h3>
+                <ul>
+                    <li><strong>ESP32 Microcontroller</strong> (ESP32-DEV board, 240MHz)
+                        <ul>
+                            <li>Dual-core processor for parallel sensor reading and web server</li>
+                            <li>Built-in WiFi for Home Assistant integration</li>
+                            <li>Deep sleep capability for battery-powered operation</li>
+                        </ul>
+                    </li>
+                    <li><strong>Dual Ultrasonic Distance Sensors</strong> (HC-SR04 or compatible)
+                        <ul>
+                            <li><strong>Upper Sensor</strong> (GPIO 27/14): Monitors entrance</li>
+                            <li><strong>Lower Sensor</strong> (GPIO 13/12): Monitors trap depth</li>
+                            <li>Both sensors must trigger simultaneously for activation</li>
+                            <li>Maximum range: 400cm</li>
+                            <li>Prevents false triggers from partial entry</li>
+                        </ul>
+                    </li>
+                    <li><strong>Relay Module</strong> (5V relay, GPIO 16)
+                        <ul>
+                            <li>Controls DC motor or solenoid</li>
+                            <li>Activates for configurable duration (default 500ms)</li>
+                            <li>Releases spring-loaded door mechanism</li>
+                        </ul>
+                    </li>
+                    <li><strong>Power Supply</strong>
+                        <ul>
+                            <li>5V/VIN for sensors and relay</li>
+                            <li>Supports battery operation with deep sleep mode</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Software Architecture</h3>
+                <p>The project uses PlatformIO with Arduino framework and follows a modular design pattern:</p>
+                <pre><code>src/
+├── main.cpp                    // Core trap logic
+├── distanceSensor.h/cpp       // Sensor abstraction
+├── relayHandler.h/cpp         // Relay control
+├── sensorsConfiguration.h/cpp  // Persistent config
+├── serverHandles.h/cpp        // Web API endpoints
+└── common/                     // Shared utilities
+    ├── common_main.h/cpp      // WiFi & OTA setup
+    ├── wifi_handler.h/cpp     // Network management
+    ├── server_handler.h/cpp   // Async web server
+    ├── ota_handler.h/cpp      // Over-the-air updates
+    └── device_configuration.h // EEPROM persistence</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Features</h2>
+            
+            <div class="feature-card">
+                <h3>1. Dual-Sensor Validation</h3>
+                <p>The trap requires <strong>both sensors</strong> to detect presence simultaneously:</p>
+                <pre><code>void loop(void) {
+    sensor1->read();
+    delay(100);
+    sensor2->read();
+    
+    if (sensor1->isTriggered() && sensor2->isTriggered()) {
+        if (trapConfig->isEngaged) {
+            relay->activate();
+            invokeHAWebHookTriggered();
+            triggeredCount++;
+            
+            if (trapConfig->turnOffAfterTrigger) {
+                esp_deep_sleep_start();  // Battery saver
+            }
+        }
+    }
+}</code></pre>
+                <p><strong>Why dual sensors?</strong></p>
+                <ul>
+                    <li>Upper sensor: Detects animal entering</li>
+                    <li>Lower sensor: Confirms full body inside trap</li>
+                    <li>Only triggers when both conditions met</li>
+                    <li>Prevents wasted triggers on curious animals that back out</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Smart Sensor Monitoring</h3>
+                <p>Each sensor includes fault detection and recovery:</p>
+                <ul>
+                    <li>Filters zero readings (sensor occlusion or failure)</li>
+                    <li>Automatic Home Assistant alerts after 3+ consecutive failures</li>
+                    <li>Rate limiting (1 malfunction alert per minute)</li>
+                    <li>Configurable distance thresholds per sensor</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Web-Based Configuration</h3>
+                <p>The trap includes a full web interface at <code>http://pigeon.local/</code>:</p>
+                <p><strong>Configuration Options:</strong></p>
+                <ul>
+                    <li><strong>Trap Engaged:</strong> Master enable/disable switch (safety!)</li>
+                    <li><strong>Sensor Names:</strong> Descriptive labels for monitoring</li>
+                    <li><strong>Trigger Distances:</strong> Independent thresholds for each sensor</li>
+                    <li><strong>Auto Sleep:</strong> Deep sleep after trigger for battery operation</li>
+                    <li><strong>Home Assistant Webhooks:</strong> Custom scene IDs for notifications</li>
+                </ul>
+                <p><strong>Key Endpoints:</strong></p>
+                <ul>
+                    <li><code>GET /</code> - Status dashboard</li>
+                    <li><code>GET /configureTrap</code> - Web config form</li>
+                    <li><code>POST /saveTrapConfig</code> - Save settings to EEPROM</li>
+                    <li><code>GET /readSensors</code> - Current sensor readings</li>
+                    <li><code>GET /triggerTrap</code> - Manual trigger (testing)</li>
+                    <li><code>GET /engageTrap</code> - Enable trap</li>
+                    <li><code>GET /disengageTrap</code> - Disable trap (safety)</li>
+                    <li><code>GET /sensorsStream</code> - WebSocket live data</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Real-Time Monitoring Dashboard</h3>
+                <p>The <code>/sensorsStream</code> endpoint provides a live WebSocket dashboard:</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Real-time sensor readings (1 second intervals)</li>
+                    <li>Last 100 readings per sensor with timestamps</li>
+                    <li>Rolling statistics: Average (last 3), Min, Max</li>
+                    <li>Zero-latency updates via WebSocket</li>
+                    <li>Visual table layout for easy monitoring</li>
+                </ul>
+                <p><strong>Use Cases:</strong></p>
+                <ul>
+                    <li>Verify sensor calibration</li>
+                    <li>Test trap placement</li>
+                    <li>Monitor animal behavior patterns</li>
+                    <li>Debug sensor issues remotely</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>5. Home Assistant Integration</h3>
+                <p>The trap sends webhooks to Home Assistant for automation:</p>
+                <p><strong>Trigger Notifications:</strong></p>
+                <ul>
+                    <li>Sends HTTP GET to configured webhook when trap fires</li>
+                    <li>Rate limited to one notification per 30 seconds</li>
+                    <li>Configurable webhook ID in trap settings</li>
+                </ul>
+                <p><strong>Malfunction Alerts:</strong></p>
+                <ul>
+                    <li>Automatic notification after sensor failures</li>
+                    <li>Rate limited to one alert per minute</li>
+                    <li>Separate webhook for malfunction events</li>
+                </ul>
+                <p><strong>Automation Examples:</strong></p>
+                <ul>
+                    <li>Send push notification when trap fires</li>
+                    <li>Turn on outdoor lights for nighttime retrieval</li>
+                    <li>Log trap events to database</li>
+                    <li>Alert multiple family members</li>
+                    <li>Disable other traps in the area</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>6. Safety Features</h3>
+                <p>The system includes multiple safety mechanisms:</p>
+                <p><strong>Software Safeties:</strong></p>
+                <ul>
+                    <li><strong>Engaged Flag:</strong> Trap must be explicitly enabled</li>
+                    <li><strong>Simulation Mode:</strong> Test without triggering (when disengaged)</li>
+                    <li><strong>Rate Limiting:</strong> Prevents spam notifications</li>
+                    <li><strong>Manual Override:</strong> Web-based emergency trigger/disable</li>
+                </ul>
+                <p><strong>Hardware Safeties:</strong></p>
+                <ul>
+                    <li><strong>Timed Relay:</strong> Relay activates for fixed duration only (500ms)</li>
+                    <li><strong>Deep Sleep Option:</strong> Prevents repeated triggers</li>
+                    <li><strong>Sensor Validation:</strong> Requires both sensors before trigger</li>
+                    <li><strong>Visual Indicators:</strong> LED feedback on ESP32 board</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>7. Power Management</h3>
+                <p>Battery operation support via ESP32 deep sleep:</p>
+                <pre><code>if (trapConfig->turnOffAfterTrigger) {
+    LOG_PRINTLN("Putting board to sleep indefinitely");
+    esp_deep_sleep_start();  // Wake via reset button only
+}</code></pre>
+                <p><strong>Power Modes:</strong></p>
+                <ul>
+                    <li><strong>Active Mode:</strong> Continuous monitoring, web server active</li>
+                    <li><strong>Deep Sleep:</strong> Ultra-low power after trigger (requires manual reset)</li>
+                    <li><strong>Hybrid:</strong> Use external battery with solar panel for extended operation</li>
+                </ul>
+                <p><strong>Power Consumption:</strong></p>
+                <ul>
+                    <li>Active: ~150-200mA (ESP32 + sensors + WiFi)</li>
+                    <li>Deep Sleep: &lt;1mA</li>
+                    <li>Battery Life (2000mAh): ~10-13 hours active, months in deep sleep</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Configuration Storage</h2>
+            <p>Settings persist in EEPROM across reboots:</p>
+            <pre><code>struct CatTrapConfig {
+    bool isEngaged;
+    char nameSensor1[25];
+    char nameSensor2[25];
+    float triggerDistanceSensor1;
+    float triggerDistanceSensor2;
+    bool turnOffAfterTrigger;
+    char haSceneAlarm[50];
+    char haSceneMalfunction[50];
+};</code></pre>
+            <p><strong>EEPROM Memory Map:</strong></p>
+            <ul>
+                <li>Device config (WiFi, OTA, hostname)</li>
+                <li>Trap config (sensors, HA webhooks)</li>
+                <li>Template-based type-safe access via <code>eeprom_utils.tpp</code></li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <div class="feature-card">
+                <h3>1. Async Web Server</h3>
+                <p>Uses ESPAsyncWebServer for non-blocking HTTP:</p>
+                <ul>
+                    <li>Sensors continue reading during web requests</li>
+                    <li>WebSocket support for live data streaming</li>
+                    <li>No interference with trap logic</li>
+                    <li>Multiple concurrent connections</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. OTA (Over-The-Air) Updates</h3>
+                <p>Remote firmware updates without physical access:</p>
+                <ul>
+                    <li>Critical for traps in remote locations</li>
+                    <li>Password-protected uploads</li>
+                    <li>Automatic rollback on failure</li>
+                    <li>Version tracking in status page</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Modular Common Library</h3>
+                <p>Shared code across multiple projects:</p>
+                <ul>
+                    <li>WiFi manager with captive portal</li>
+                    <li>mDNS responder (<code>pigeon.local</code>)</li>
+                    <li>Device configuration templates</li>
+                    <li>Logging utilities</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. NewPing Library Integration</h3>
+                <p>Professional ultrasonic sensor handling:</p>
+                <ul>
+                    <li>Ping median filtering</li>
+                    <li>Timeout management</li>
+                    <li>Maximum distance limiting</li>
+                    <li>ISR-based non-blocking reads</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Deployment Workflow</h2>
+            
+            <div class="feature-card">
+                <h3>1. Initial Setup</h3>
+                <pre><code># Clone and build
+git clone git@github.com:rmfalco89/Pests_trap.git
+cd Pests_trap
+pio run --target upload
+
+# Configure WiFi via captive portal
+# Connect to "TomatoBasil-Setup" network
+# Enter WiFi credentials</code></pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Configuration</h3>
+                <ul>
+                    <li>Navigate to <code>http://pigeon.local/configureTrap</code></li>
+                    <li>Set sensor distances (test with <code>/readSensors</code>)</li>
+                    <li>Configure Home Assistant webhooks</li>
+                    <li><strong>Keep trap disengaged until deployed</strong></li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Calibration</h3>
+                <ul>
+                    <li>Monitor <code>/sensorsStream</code> in browser</li>
+                    <li>Adjust sensor angles for optimal coverage</li>
+                    <li>Test different bait placements</li>
+                    <li>Run <code>/triggerTrap</code> to verify relay operation</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Deployment</h3>
+                <ul>
+                    <li>Place trap in target location</li>
+                    <li>Verify WiFi signal strength (status page)</li>
+                    <li>Engage trap via <code>/engageTrap</code></li>
+                    <li>Monitor Home Assistant for alerts</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>5. Retrieval</h3>
+                <ul>
+                    <li>Receive Home Assistant notification</li>
+                    <li>Disengage trap remotely (<code>/disengageTrap</code>)</li>
+                    <li>Safely retrieve and relocate animal</li>
+                    <li>Reset trap for next use</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Quality & Best Practices</h2>
+            <p><strong>Strengths:</strong></p>
+            <ul>
+                <li>Clean separation of concerns (sensors, relay, config, server)</li>
+                <li>Type-safe EEPROM access via templates</li>
+                <li>Comprehensive status reporting</li>
+                <li>Professional error handling (bad sensor readings)</li>
+                <li>Rate-limited notifications prevent spam</li>
+                <li>WebSocket for efficient real-time data</li>
+            </ul>
+            <p><strong>Production-Ready Features:</strong></p>
+            <ul>
+                <li>OTA updates for remote maintenance</li>
+                <li>EEPROM persistence survives power loss</li>
+                <li>Safety interlocks prevent accidental triggers</li>
+                <li>mDNS for easy device discovery</li>
+                <li>Detailed logging for debugging</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Impact & Applications</h2>
+            <p><strong>Wildlife Management:</strong></p>
+            <ul>
+                <li>Humane capture of feral cats for TNR (Trap-Neuter-Return)</li>
+                <li>Relocation of nuisance raccoons, possums, skunks</li>
+                <li>Wildlife research and population monitoring</li>
+            </ul>
+            <p><strong>Smart Home Integration:</strong></p>
+            <ul>
+                <li>Part of comprehensive home automation</li>
+                <li>Automated alert routing based on time/location</li>
+                <li>Integration with security cameras</li>
+                <li>Historical data for pattern analysis</li>
+            </ul>
+            <p><strong>Learning Platform:</strong></p>
+            <ul>
+                <li>Excellent example of embedded IoT architecture</li>
+                <li>Demonstrates ESP32 advanced features</li>
+                <li>Shows practical Home Assistant integration</li>
+                <li>Template for similar automation projects</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Stack Summary</h2>
+            <div class="tech-stack-list">
+                <div class="tech-category">
+                    <h4>Hardware</h4>
+                    <ul>
+                        <li>ESP32-DEV (240MHz, dual-core, WiFi)</li>
+                        <li>HC-SR04 ultrasonic sensors (x2)</li>
+                        <li>5V relay module</li>
+                        <li>DC motor or solenoid actuator</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h4>Software</h4>
+                    <ul>
+                        <li>PlatformIO build system</li>
+                        <li>Arduino framework</li>
+                        <li>ESPAsyncWebServer</li>
+                        <li>NewPing sensor library</li>
+                        <li>ArduinoJson 7.x</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h4>Protocols</h4>
+                    <ul>
+                        <li>HTTP REST API</li>
+                        <li>WebSocket (real-time data)</li>
+                        <li>mDNS service discovery</li>
+                        <li>Home Assistant webhooks</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h4>Infrastructure</h4>
+                    <ul>
+                        <li>Home Assistant automation hub</li>
+                        <li>OTA update server</li>
+                        <li>Local WiFi network</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>The Tomato Basil Cat Trap represents a thoughtful, humane approach to wildlife management. It combines reliable dual-sensor validation, remote monitoring, and smart home integration into a production-ready embedded system. The clean architecture, comprehensive safety features, and Home Assistant integration make it suitable for both DIY enthusiasts and professional wildlife managers.</p>
+            <p><strong>What makes it special:</strong></p>
+            <ul>
+                <li><strong>Reliability:</strong> Dual sensors prevent false triggers</li>
+                <li><strong>Intelligence:</strong> WebSocket monitoring and fault detection</li>
+                <li><strong>Integration:</strong> Seamless Home Assistant automation</li>
+                <li><strong>Humanity:</strong> Designed for safe capture and relocation</li>
+                <li><strong>Maintainability:</strong> OTA updates and EEPROM configuration</li>
+                <li><strong>Extensibility:</strong> Modular design ready for enhancements</li>
+            </ul>
+            <p>Whether you're managing a feral cat colony, conducting wildlife research, or building IoT automation systems, this project demonstrates professional-grade embedded development with real-world impact.</p>
+        </section>
+    </article>
+    
+    <footer class="project-footer">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </footer>
+</body>
+</html>
