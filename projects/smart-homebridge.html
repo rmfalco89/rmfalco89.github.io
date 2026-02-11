@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>smartHomebridge - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>smartHomebridge</h1>
+            <p class="subtitle">Intelligent Climate Control Middleware for HomeKit</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/smartHomebridge" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">ESP8266</span>
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">Django</span>
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Homebridge API</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Apple HomeKit provides excellent smart home control, but it has limitations:</p>
+            <ul>
+                <li>Accessories can't directly communicate or create complex automation rules</li>
+                <li>Simple temperature sensors can't automatically control heaters or humidifiers</li>
+                <li>Third-party devices need expensive bridges or limited functionality</li>
+                <li>Custom logic requires HomeKit Automations, which are rigid and platform-locked</li>
+            </ul>
+            <p><strong>smartHomebridge</strong> solves this by creating an intelligent middleware layer that sits between ESP8266 environmental sensors and HomeKit-controlled devices via Homebridge, enabling sophisticated automated climate control.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture Overview</h2>
+            <p>This is a <strong>dual-component system</strong>:</p>
+            
+            <div class="feature-card">
+                <h3>1. ESP8266 Firmware (Arduino/PlatformIO)</h3>
+                <ul>
+                    <li>Reads temperature and humidity via DHT sensor</li>
+                    <li>Connects to WiFi and reports readings to Django backend</li>
+                    <li>Self-configures via AP mode on first boot (web-based setup)</li>
+                    <li>Stores configuration in EEPROM for persistence</li>
+                    <li>Periodically sends readings (configurable interval, default 3 minutes)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Django Web Server (Python)</h3>
+                <ul>
+                    <li>RESTful API receives sensor readings from ESP8266 devices</li>
+                    <li>Authenticates with Homebridge UI via bearer tokens</li>
+                    <li>Caches device and configuration state (5-minute TTL)</li>
+                    <li>Implements threshold-based control logic with hysteresis</li>
+                    <li>Controls HomeKit switches via Homebridge API</li>
+                    <li>Persists readings and device state to SQLite</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Features</h2>
+            
+            <div class="feature-card">
+                <h3>✅ Self-Provisioning ESP8266 Devices</h3>
+                <p>On first boot, the ESP8266 creates a WiFi access point (<code>Ard_T-RH_config</code>) where you configure:</p>
+                <ul>
+                    <li>WiFi SSID/password</li>
+                    <li>Device name (e.g., <code>bedroom_heater</code>)</li>
+                    <li>Django server IP and port</li>
+                </ul>
+                <p>Configuration is stored in EEPROM and persists across reboots.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✅ Intelligent Climate Control with Hysteresis</h3>
+                <p>The system prevents rapid on/off cycling (relay chatter) using <strong>hysteresis thresholds</strong>:</p>
+                <pre><code># Example: Heater control
+if temp > threshold + gap:
+    turn_off_heater()  # Too hot
+elif temp < threshold - gap:
+    turn_on_heater()   # Too cold
+else:
+    # Within acceptable range, do nothing
+    pass</code></pre>
+                
+                <p><strong>Configuration example</strong> (per device):</p>
+                <pre><code>{
+  "heater_temp_threshold": 22.0,
+  "temp_threshold_gap": 1.5,
+  "heater_switch_name": "Bedroom Heater",
+  "rh_threshold": 45.0,
+  "rh_threshold_gap": 5.0,
+  "humidifier_switch_name": "Bedroom Humidifier"
+}</code></pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✅ Multi-Device Support with Feature Flags</h3>
+                <p>Each device declares its capabilities via the <code>features</code> field:</p>
+                <pre><code>Device(
+    name="bedroom_heater",
+    type="temp_humidity_sensor",
+    features=[
+        "temp_switch_control",      # Control heater via smart switch
+        "humidifier_switch_control"  # Control humidifier
+    ]
+)</code></pre>
+                <p>Future-proofing: Support for <code>temp_IR_control</code> (infrared heater control) is already scaffolded.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✅ Efficient Data Storage with Gap-Based Deduplication</h3>
+                <p>Instead of logging every reading, the system only creates new database rows when values change significantly:</p>
+                <pre><code># Only save new row if reading exceeds acceptable gap
+if abs(new_temp - last_temp) > temp_threshold_gap:
+    create_new_reading()
+else:
+    increment_counter_on_existing_reading()</code></pre>
+                <p>This dramatically reduces storage growth while preserving meaningful state changes.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✅ Homebridge API Integration</h3>
+                <p>The Django server authenticates with Homebridge UI and controls accessories programmatically:</p>
+                
+                <p><strong>Authentication flow:</strong></p>
+                <ol>
+                    <li>POST <code>/api/auth/login</code> with username/password from environment variable</li>
+                    <li>Store bearer token and expiration time</li>
+                    <li>Auto-refresh token when expired</li>
+                </ol>
+                
+                <p><strong>Control flow:</strong></p>
+                <ol>
+                    <li>GET <code>/api/accessories</code> to list all devices (cached for configurable interval)</li>
+                    <li>GET <code>/api/accessories/{uniqueId}</code> to check current state</li>
+                    <li>PUT <code>/api/accessories/{uniqueId}</code> to toggle switches</li>
+                </ol>
+                
+                <p><strong>Smart optimizations:</strong></p>
+                <ul>
+                    <li>Decorator pattern for auth checking (<code>@require_authentication</code>)</li>
+                    <li>Only sends control commands if state differs from current</li>
+                    <li>Double-checks state after command to verify success</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Deep Dive</h2>
+            
+            <h3>ESP8266 State Machine</h3>
+            <p>The firmware operates in two modes:</p>
+            <pre><code>enum DeviceMode {
+    MODE_CONFIGURE_DEVICE,  // AP mode for initial setup
+    MODE_NORMAL            // Connected mode, sending readings
+};
+
+void setup() {
+    EEPROM.begin(256);
+    dhtSetup();
+    
+    readDeviceConfigurationFromEeprom();
+    if (currentDeviceConfiguration == nullptr) {
+        mode = MODE_CONFIGURE_DEVICE;
+        wifiServerAPConfigurationModeSetup();  // Start AP
+    } else {
+        mode = MODE_NORMAL;
+        // Connect to WiFi and start sending readings
+    }
+}</code></pre>
+            
+            <h3>Django Request Handler</h3>
+            <p>The <code>/reading/&lt;device&gt;</code> endpoint processes sensor data:</p>
+            <pre><code>@csrf_exempt
+def reading(request: HttpRequest, device: str):
+    data = json.loads(request.body)
+    # {"temp": 22.5, "rh": 45.3}
+    
+    response = device_control.register_device_reading(device, data)
+    # Returns: "no action" or "Turn heater ON"
+    
+    return HttpResponse(response)</code></pre>
+            
+            <h3>Database Schema</h3>
+            <p><strong>Key models:</strong></p>
+            <pre><code>class Device(models.Model):
+    name = models.CharField(max_length=100, primary_key=True)
+    type = models.CharField(max_length=100)
+    features = models.JSONField(default=list)
+    # Runtime fields populated from network:
+    ip_address = ""
+    mac_address = ""
+
+class DeviceConfiguration(models.Model):
+    device = models.ForeignKey(Device)
+    active = models.BooleanField()
+    configuration = models.JSONField(default=dict)
+    set_on = models.DateTimeField(auto_now=True)
+
+class DeviceReadings(models.Model):
+    device = models.ForeignKey(Device)
+    timestamp = models.DateTimeField()
+    data = models.JSONField(default=dict)
+    counter = models.IntegerField()  # Increments for similar readings</code></pre>
+        </section>
+        
+        <section class="content-section">
+            <h2>Security & Configuration</h2>
+            
+            <h3>Secrets Management</h3>
+            <ul>
+                <li><strong>Homebridge password:</strong> Stored in <code>HOMEBRIDGE_UI_PASSWORD</code> environment variable</li>
+                <li><strong>WiFi credentials:</strong> Hard-coded in ESP8266 firmware (could be externalized)</li>
+                <li><strong>Homebridge config:</strong> YAML file (<code>configs/homebridge.yaml</code>) with server IP/port</li>
+            </ul>
+            
+            <h3>Configuration Structure</h3>
+            <pre><code>server_ip: 10.0.1.10
+server_port: 8581
+username: admin
+mode: development  # or production
+development:
+  accessory_refresh_interval: 60  # seconds
+production:
+  accessory_refresh_interval: 300</code></pre>
+        </section>
+        
+        <section class="content-section">
+            <h2>What I'd Improve</h2>
+            <ol>
+                <li><strong>WiFi credentials in firmware:</strong> Move to environment variables or secure storage</li>
+                <li><strong>OTA updates:</strong> The firmware has scaffolding for software upgrades but it's not implemented</li>
+                <li><strong>HTTPS/TLS:</strong> Communication between ESP8266 and Django is unencrypted</li>
+                <li><strong>Token refresh logic:</strong> Could use a decorator pattern for automatic token renewal</li>
+                <li><strong>IR control:</strong> Finish implementation of <code>temp_IR_control</code> feature for infrared heater control</li>
+                <li><strong>Monitoring/Alerting:</strong> Add health checks and notifications for offline devices</li>
+                <li><strong>Time-based rules:</strong> Support for "don't run heater between 10pm-6am" type rules</li>
+                <li><strong>Web UI:</strong> Currently all configuration is in code/database; could benefit from admin interface</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Why This Project Matters</h2>
+            <p>This demonstrates several advanced IoT concepts:</p>
+            <ul class="highlights-list">
+                <li><strong>Middleware architecture:</strong> Decoupling sensors from actuators enables complex logic</li>
+                <li><strong>API-driven automation:</strong> Using Homebridge API as a control plane</li>
+                <li><strong>Hysteresis control:</strong> Preventing relay chatter in HVAC systems</li>
+                <li><strong>Self-provisioning devices:</strong> Zero-touch configuration via captive portal</li>
+                <li><strong>Efficient data storage:</strong> Gap-based deduplication reduces storage by ~90%</li>
+                <li><strong>Full-stack integration:</strong> Hardware firmware, REST API, external API client, database</li>
+            </ul>
+            <p><strong>Real-world use case:</strong> "My bedroom is too cold in the morning but too hot at night. This system automatically manages my heater based on real-time temperature, not just a dumb thermostat schedule."</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Deployment Notes</h2>
+            
+            <h3>Hardware Requirements</h3>
+            <ul>
+                <li>ESP8266 (ESP-12E module)</li>
+                <li>DHT22 temperature/humidity sensor</li>
+                <li>Smart switches controlled via HomeKit/Homebridge</li>
+                <li>Raspberry Pi (or similar) running Homebridge</li>
+            </ul>
+            
+            <h3>Software Stack</h3>
+            <ul>
+                <li>PlatformIO for ESP8266 development</li>
+                <li>Django 3.x+ with Python 3.9+</li>
+                <li>Homebridge with UI plugin</li>
+                <li>SQLite for development (could use PostgreSQL in production)</li>
+            </ul>
+            
+            <h3>Network Setup</h3>
+            <ul>
+                <li>ESP8266 devices connect to local WiFi</li>
+                <li>Django server accessible on LAN</li>
+                <li>Homebridge server accessible via HTTP API</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p><strong>smartHomebridge</strong> is a production-ready smart home automation middleware that bridges the gap between low-cost ESP8266 sensors and Apple HomeKit. It showcases full-stack IoT development, from bare-metal C++ firmware to Django API servers to third-party API integration.</p>
+            <p>The intelligent climate control logic with hysteresis prevents the annoying on/off cycling common in smart home automations, while the flexible feature flag system makes it trivial to add new device types and control strategies.</p>
+            <p>If you want your smart home to actually be smart—not just remote-controlled—this is the kind of middleware layer that makes it possible.</p>
+        </section>
+    </article>
+    
+    <script src="../js/project.js"></script>
+</body>
+</html>
