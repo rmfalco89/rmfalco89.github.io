@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitty Temp - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Kitty Temp</h1>
+            <p class="subtitle">ESP32 Temperature & Humidity Sensor with Home Assistant Integration</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/kitty_temp" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">C++</span>
+                    <span class="tech-tag">ESP32</span>
+                    <span class="tech-tag">PlatformIO</span>
+                    <span class="tech-tag">DHT22</span>
+                    <span class="tech-tag">Home Assistant</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p><strong>Kitty Temp</strong> is a production-ready ESP32-based environmental monitoring system that reads temperature and humidity data from a DHT22 sensor and seamlessly integrates with Home Assistant. Built on a robust ESP32 project template, this device provides reliable, wireless environmental monitoring with professional-grade features like OTA updates, web-based configuration, and automatic failover mechanisms.</p>
+            <p>The project represents a practical application of IoT principles in home automation, combining hardware interfacing, wireless networking, web server implementation, and home automation platform integration into a single cohesive system.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Architecture</h2>
+            
+            <div class="feature-card">
+                <h3>Hardware Platform</h3>
+                <ul>
+                    <li><strong>Microcontroller:</strong> ESP32 NodeMCU-32S</li>
+                    <li><strong>Sensor:</strong> DHT22 temperature and humidity sensor (GPIO4)</li>
+                    <li><strong>LED:</strong> Built-in LED on GPIO2 for status indication</li>
+                    <li><strong>Framework:</strong> Arduino with PlatformIO build system</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Software Stack</h3>
+                <ul>
+                    <li><strong>Core Framework:</strong> Arduino for ESP32</li>
+                    <li><strong>Web Server:</strong> ESPAsyncWebServer for non-blocking HTTP handling</li>
+                    <li><strong>Data Format:</strong> ArduinoJson v7 for configuration and API communication</li>
+                    <li><strong>Sensor Library:</strong> Adafruit DHT sensor library</li>
+                    <li><strong>Communication:</strong> AsyncTCP for concurrent connections</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Features</h2>
+            
+            <div class="feature-card">
+                <h3>1. Environmental Monitoring</h3>
+                <p><strong>DHT22 Sensor Integration</strong></p>
+                <ul>
+                    <li>Reads temperature and humidity every 10 seconds</li>
+                    <li>Supports both Celsius and Fahrenheit</li>
+                    <li>Implements error handling with automatic sensor reinitialization on failed reads</li>
+                    <li>Uses moving average filtering for stable readings (5-sample window)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Home Assistant Integration</h3>
+                <p>The system pushes sensor data directly to Home Assistant via its REST API:</p>
+                <ul>
+                    <li>Configurable update intervals (default: 30 seconds)</li>
+                    <li>Automatic entity ID generation from sensor names</li>
+                    <li>Bearer token authentication</li>
+                    <li>HTTP timeout protection to prevent watchdog resets</li>
+                    <li>Graceful failure handling (logs errors but continues operating)</li>
+                    <li>Connection testing endpoint</li>
+                </ul>
+                <p>The system sends data to Home Assistant <code>input_number</code> entities, which can be:</p>
+                <ul>
+                    <li>Displayed in dashboards</li>
+                    <li>Used in automations</li>
+                    <li>Logged to databases (InfluxDB, etc.)</li>
+                    <li>Integrated with other smart home devices</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Web-Based Configuration Interface</h3>
+                <p>The device hosts a comprehensive web interface accessible at <code>http://&lt;hostname&gt;/configure</code>:</p>
+                <ul>
+                    <li><strong>Basic Settings:</strong> WiFi SSID/password, device hostname</li>
+                    <li><strong>Sensor Settings:</strong> Temperature/humidity sensor names, sampling interval, LED brightness, alive signal configuration</li>
+                    <li><strong>Home Assistant:</strong> Enable/disable integration, hostname and port, authentication token, update interval</li>
+                </ul>
+                <p><strong>Additional Routes:</strong></p>
+                <ul>
+                    <li><code>/</code> - Home page with status information</li>
+                    <li><code>/reboot</code> - Trigger device restart</li>
+                    <li><code>/invalidateConfig</code> - Force configuration mode on next boot</li>
+                    <li><code>/checkForUpdates</code> - Manually trigger OTA update check</li>
+                    <li><code>/uploadFirmware</code> - Browser-based firmware upload</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Over-The-Air (OTA) Updates</h3>
+                <p>Multiple OTA update mechanisms:</p>
+                <ul>
+                    <li><strong>GitHub-Based Updates:</strong> Periodically checks GitHub releases, supports private repositories, validates firmware versions, automatic installation and reboot</li>
+                    <li><strong>Browser-Based Upload:</strong> Manual firmware upload via web interface, useful for development and debugging</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>5. Configuration Mode System</h3>
+                <p>The device implements a sophisticated configuration mode that activates when:</p>
+                <ul>
+                    <li>No valid configuration exists in EEPROM</li>
+                    <li>The device detects a quick restart (less than 30 seconds between boots)</li>
+                    <li>Configuration is manually invalidated via web interface</li>
+                </ul>
+                <p>In configuration mode:</p>
+                <ul>
+                    <li>Creates a WiFi access point (<code>ArduinoNetConfig</code> by default)</li>
+                    <li>Hosts a web interface at <code>http://arduino.local/configure</code></li>
+                    <li>Remains active for 5 minutes before timing out</li>
+                    <li>Allows complete device setup without reflashing firmware</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>6. EEPROM Persistence</h3>
+                <p>Robust EEPROM management with:</p>
+                <ul>
+                    <li>Automatic address allocation to prevent conflicts</li>
+                    <li>CRC checksums for data integrity</li>
+                    <li>Magic number validation</li>
+                    <li>Automatic initialization of invalid configurations</li>
+                    <li>Safe read/write operations</li>
+                </ul>
+                <p><strong>Stored Data:</strong> WiFi credentials, device hostname, sensor configuration, Home Assistant settings, all user preferences</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>7. Safety Features</h3>
+                <ul>
+                    <li><strong>Watchdog Protection:</strong> 30-second watchdog timer automatically resets the device if the main loop hangs</li>
+                    <li><strong>Bootloop Detection:</strong> Tracks restart timing, detects rapid restart cycles, automatically enters safe configuration mode</li>
+                    <li><strong>HTTP Timeout Protection:</strong> 10-second timeouts prevent watchdog issues during slow network operations</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Organization</h2>
+            <div class="architecture-diagram">
+                <pre>
+kitty_temp/
+├── src/
+│   ├── main.cpp              # Main application entry point
+│   ├── dht_handler.cpp/h     # DHT22 sensor management
+│   ├── hass_handler.cpp/h    # Home Assistant integration
+│   ├── system_config.cpp/h   # Project-specific configuration
+│   ├── serverHandles.cpp/h   # HTTP route handlers
+│   ├── globals.cpp/h         # Global variables
+│   └── common/               # Template-provided utilities
+│       ├── common_main.cpp   # Common setup/loop logic
+│       ├── wifi_handler.cpp  # WiFi management
+│       ├── ota_handler.cpp   # OTA update system
+│       ├── eeprom_utils.tpp  # EEPROM helpers
+│       └── ...
+├── platformio.ini            # Build configuration
+├── README.md                 # Setup instructions
+└── claude_docs/              # Development documentation
+                </pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Separation of Concerns</h3>
+                <p><strong>Application Layer</strong> (<code>main.cpp</code>, <code>dht_handler.cpp</code>, <code>hass_handler.cpp</code>)</p>
+                <ul>
+                    <li>Business logic specific to temperature/humidity monitoring</li>
+                    <li>Home Assistant integration</li>
+                    <li>Sensor reading and filtering</li>
+                </ul>
+                <p><strong>Common Layer</strong> (<code>src/common/</code>)</p>
+                <ul>
+                    <li>Reusable infrastructure code</li>
+                    <li>WiFi management</li>
+                    <li>Web server setup</li>
+                    <li>OTA updates</li>
+                    <li>EEPROM management</li>
+                </ul>
+                <p>This architecture allows the common layer to be reused across multiple ESP32 projects while keeping application-specific code isolated.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Application</h2>
+            <p>This project solves a common home automation need: reliable environmental monitoring integrated with a central automation platform. Typical use cases include:</p>
+            
+            <div class="feature-card">
+                <h3>Temperature Monitoring</h3>
+                <ul>
+                    <li>Baby room temperature tracking</li>
+                    <li>Server room climate monitoring</li>
+                    <li>Greenhouse environment control</li>
+                    <li>Wine cellar monitoring</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Home Automation Triggers</h3>
+                <ul>
+                    <li>Turn on heating when temperature drops below threshold</li>
+                    <li>Activate dehumidifier when humidity exceeds limit</li>
+                    <li>Send notifications for extreme conditions</li>
+                    <li>Log historical data for analysis</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Example Home Assistant Automation</h3>
+                <pre><code>automation:
+  - alias: "Bedroom Too Hot Alert"
+    trigger:
+      - platform: numeric_state
+        entity_id: input_number.parents_room_temp
+        above: 75
+        for: "00:05:00"
+    action:
+      - service: notify.mobile_app
+        data:
+          message: "Bedroom temperature is {{ states('input_number.parents_room_temp') }}°F"
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <div class="feature-card">
+                <h3>1. Robust Error Handling</h3>
+                <pre><code>// Sensor reading with automatic reinitialization
+if (!(isnan(temp) || isnan(humidity))) {
+    register_measurement(temp, humidity);
+} else {
+    Serial.println("Didn't get good measurement:");
+    dht.begin(); // Reinitialize sensor
+}
+</code></pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. HTTP Timeout Protection</h3>
+                <pre><code>http.setTimeout(10000);  // 10 second timeout prevents watchdog issues
+</code></pre>
+                <p>This critical detail prevents the watchdog timer from triggering during slow network operations.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Smart Entity ID Generation</h3>
+                <pre><code>String entityId = "input_number." + String(systemConfiguration->tempSensorName);
+entityId.replace(" ", "_");
+entityId.toLowerCase();
+// "Parents room Temp" → "input_number.parents_room_temp"
+</code></pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Memory-Efficient Moving Average</h3>
+                <p>Instead of storing all historical data, the system uses a circular buffer:</p>
+                <pre><code>void register_measurement(float temp, float humidity) {
+    measurements[measurement_index++] = Measurement(temp, humidity);
+    measurement_index %= MOVING_AVG_WINDOW_SIZE;
+}
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Hardware Setup</h2>
+            <p>The project includes clear wiring documentation:</p>
+            
+            <div class="feature-card">
+                <h3>DHT22 Sensor</h3>
+                <ul>
+                    <li>VCC → 3.3V</li>
+                    <li>GND → GND</li>
+                    <li>DATA → GPIO4</li>
+                    <li>No external pull-up resistor needed (module has built-in)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>LED Status Indicator</h3>
+                <ul>
+                    <li>GPIO2 (built-in LED on NodeMCU-32S)</li>
+                    <li>No external wiring needed</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Power</h3>
+                <ul>
+                    <li>USB or 5V power supply</li>
+                    <li>ESP32 regulates to 3.3V internally</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Configuration Process</h2>
+            
+            <div class="feature-card">
+                <h3>Initial Setup</h3>
+                <ol>
+                    <li>Power on the device (first boot enters configuration mode)</li>
+                    <li>Connect to <code>ArduinoNetConfig</code> WiFi network</li>
+                    <li>Navigate to <code>http://arduino.local/configure</code></li>
+                    <li>Enter WiFi credentials and device hostname</li>
+                    <li>Configure sensor names and sampling interval</li>
+                    <li>Optionally enable Home Assistant integration</li>
+                    <li>Save configuration (device reboots into normal mode)</li>
+                </ol>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Home Assistant Setup</h3>
+                <ol>
+                    <li>Create a long-lived access token in Home Assistant</li>
+                    <li>Enter the token in the device configuration</li>
+                    <li>Configure hostname and port (default: <code>homeassistant.local:8123</code>)</li>
+                    <li>Set update interval (recommended: 30-60 seconds)</li>
+                    <li>Enable the integration</li>
+                    <li>Create matching <code>input_number</code> entities in Home Assistant</li>
+                </ol>
+                <pre><code>input_number:
+  parents_room_temp:
+    name: "Parents Room Temperature"
+    min: -50
+    max: 150
+    step: 0.1
+    unit_of_measurement: "°F"
+    
+  parents_room_humidity:
+    name: "Parents Room Humidity"
+    min: 0
+    max: 100
+    step: 0.1
+    unit_of_measurement: "%"
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Lessons & Best Practices</h2>
+            
+            <div class="feature-card">
+                <h3>What Works Well</h3>
+                <ul>
+                    <li><strong>Template-Based Development:</strong> The common layer approach significantly reduces boilerplate and allows focus on application logic.</li>
+                    <li><strong>Configuration Mode:</strong> The auto-detection of configuration issues and automatic entry into safe mode makes the device extremely user-friendly.</li>
+                    <li><strong>Moving Average Filter:</strong> The simple 5-sample moving average effectively eliminates sensor noise without complex filtering algorithms.</li>
+                    <li><strong>Fail-Safe Design:</strong> Multiple layers of protection (watchdog, bootloop detection, HTTP timeouts) ensure the device remains operational.</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Potential Improvements</h3>
+                <ul>
+                    <li><strong>MQTT Support:</strong> Would provide lower latency, more efficient network usage, automatic state persistence, and bidirectional communication for LED control.</li>
+                    <li><strong>Sensor Auto-Discovery:</strong> Home Assistant's MQTT discovery would eliminate manual entity creation.</li>
+                    <li><strong>Data Buffering:</strong> Store readings during Home Assistant outages to prevent data loss.</li>
+                    <li><strong>TLS/SSL Support:</strong> Encrypted communication would add security for production deployments.</li>
+                    <li><strong>Multi-Sensor Support:</strong> The architecture could be extended to support multiple DHT22 sensors on different GPIO pins.</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Skills Demonstrated</h2>
+            <ul class="highlights-list">
+                <li><strong>Embedded Systems:</strong> Microcontroller programming, GPIO interfacing, sensor reading, interrupt handling, memory-constrained programming</li>
+                <li><strong>Networking:</strong> WiFi configuration, HTTP client/server, REST API integration, asynchronous network operations</li>
+                <li><strong>Software Architecture:</strong> Template-based code reuse, separation of concerns, configuration management, state machines, error handling</li>
+                <li><strong>Data Processing:</strong> Signal filtering (moving average), data validation, circular buffer implementation</li>
+                <li><strong>DevOps:</strong> OTA update mechanisms, version management, GitHub integration, browser-based deployment</li>
+                <li><strong>Home Automation:</strong> Home Assistant API integration, smart home entity modeling, automation-friendly data formatting</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Why It's Interesting</h2>
+            <p><strong>Kitty Temp</strong> is a well-engineered, production-ready environmental monitoring solution that demonstrates professional IoT development practices. The project successfully balances:</p>
+            <ul class="highlights-list">
+                <li><strong>Reliability:</strong> Watchdog timers, bootloop detection, graceful error handling</li>
+                <li><strong>Usability:</strong> Web-based configuration, automatic network setup</li>
+                <li><strong>Maintainability:</strong> Template architecture, clear code organization</li>
+                <li><strong>Extensibility:</strong> Easy to add new sensors or integrate with other platforms</li>
+            </ul>
+            <p>The use of a common template layer shows foresight in building reusable infrastructure, while the application-specific code remains clean and focused. The Home Assistant integration makes the device immediately useful in real smart home deployments.</p>
+            <p>This project represents exactly the kind of pragmatic, well-thought-out IoT solution that bridges the gap between hobby electronics and professional home automation systems.</p>
+        </section>
+        
+        <footer class="project-footer">
+            <a href="https://github.com/rmfalco89/kitty_temp" target="_blank" class="github-link-large">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                View on GitHub
+            </a>
+        </footer>
+    </article>
+    
+    <script src="../js/project.js"></script>
+</body>
+</html>
