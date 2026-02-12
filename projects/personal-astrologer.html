@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Astrologer - AI-Powered Personalized Astrology Platform - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Personal Astrologer</h1>
+            <p class="subtitle">AI-Powered Personalized Astrology Platform</p>
+            <div class="project-meta">
+                <span class="status-badge">Private Repository</span>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">FastAPI</span>
+                    <span class="tech-tag">PostgreSQL</span>
+                    <span class="tech-tag">React Native</span>
+                    <span class="tech-tag">TypeScript</span>
+                    <span class="tech-tag">Expo</span>
+                    <span class="tech-tag">OpenAI</span>
+                    <span class="tech-tag">Kerykeion</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>Personal Astrologer is a modern, full-stack astrology application that transforms generic horoscopes into personalized, accurate astrological insights. Unlike traditional astrology apps that serve the same daily horoscope to millions, this platform generates truly personalized interpretations based on each user's precise natal chart, calculated from their exact birth time and location.</p>
+            
+            <p>The project combines advanced astronomical calculations, multiple astrological traditions (Western, Vedic, Chinese), and AI-powered interpretation to deliver meaningful, actionable insights through a clean mobile experience.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Vision: Personalized Over Generic</h2>
+            <p>Traditional horoscope apps have a fundamental problem: they serve generic predictions to millions of people based solely on sun sign. Personal Astrologer takes a different approach:</p>
+            
+            <ul>
+                <li><strong>Precise Calculations:</strong> Real astronomical data using the Swiss Ephemeris (swisseph) for accurate planetary positions</li>
+                <li><strong>Individual Natal Charts:</strong> Every insight based on the user's specific birth date, time, and location</li>
+                <li><strong>Multi-Tradition Support:</strong> Western, Vedic, Chinese, and Kabbalistic astrology traditions</li>
+                <li><strong>AI-Enhanced Interpretations:</strong> Specialized AI agents trained in different astrological systems provide nuanced readings</li>
+                <li><strong>Relationship Analysis:</strong> Synastry calculations for compatibility with specific people (partners, coworkers, family)</li>
+                <li><strong>Transit Tracking:</strong> Weekly and monthly personalized forecasts based on current planetary transits affecting the user's chart</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture</h2>
+            
+            <h3>Backend: Python FastAPI Powerhouse</h3>
+            <p>The backend is built on <strong>FastAPI</strong>, chosen for its async performance, automatic API documentation, and excellent Python 3.11+ support. The architecture follows clean architecture principles with clear separation of concerns.</p>
+            
+            <div class="feature-card">
+                <h3>🔧 Core Technologies</h3>
+                <ul>
+                    <li><strong>FastAPI:</strong> High-performance async web framework</li>
+                    <li><strong>PostgreSQL:</strong> Primary database with hierarchical category system</li>
+                    <li><strong>Redis:</strong> Caching layer for chart calculations and session management</li>
+                    <li><strong>SQLAlchemy + Alembic:</strong> ORM and migrations for data model evolution</li>
+                    <li><strong>Kerykeion Unified API:</strong> External service (port 5333) for multi-tradition astrological calculations</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>⚙️ Key Services</h3>
+                <ul>
+                    <li><strong>Astrology Integration Service:</strong> Kerykeion client for natal charts, transits, synastry; supports modern, traditional, Vedic, and Kabbalistic traditions; chart caching and encryption</li>
+                    <li><strong>AI Service:</strong> OpenAI GPT-4/Claude integration for interpretations; LangChain framework for specialized astrology agents; multi-text generation (4 variants per category/day); contextual chat with astrological knowledge</li>
+                    <li><strong>Chart Service:</strong> Natal chart generation and storage; transit calculations for any time period; composite chart generation for relationships; encrypted chart data storage</li>
+                </ul>
+            </div>
+            
+            <h3>Mobile: React Native Cross-Platform App</h3>
+            <p>The mobile app is built with <strong>React Native</strong> and <strong>Expo</strong>, providing native iOS and Android experiences from a single TypeScript codebase.</p>
+            
+            <div class="feature-card">
+                <h3>📱 Mobile Stack</h3>
+                <ul>
+                    <li><strong>React Native + Expo:</strong> Cross-platform framework</li>
+                    <li><strong>TypeScript:</strong> Type safety and excellent developer experience</li>
+                    <li><strong>Redux Toolkit:</strong> Predictable state management</li>
+                    <li><strong>React Navigation 6:</strong> Native navigation patterns</li>
+                    <li><strong>React Query:</strong> Server state management and intelligent caching</li>
+                    <li><strong>AsyncStorage + Keychain:</strong> Secure local persistence</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✨ Mobile Features</h3>
+                <ul>
+                    <li>Unified category system (general + relationship-specific horoscopes)</li>
+                    <li>Zodiac-themed backgrounds based on user's sun sign</li>
+                    <li>Tap-to-chat interface for conversational AI</li>
+                    <li>Offline-first architecture with sync</li>
+                    <li>Push notifications for daily insights</li>
+                    <li>Social auth (Google, Apple) + email/password</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Security & Privacy: Enterprise-Grade Protection</h2>
+            <p>Handling birth data is sensitive—users trust the app with personal information. The platform implements comprehensive security measures:</p>
+            
+            <div class="feature-card">
+                <h3>🔐 Authentication & Authorization</h3>
+                <ul>
+                    <li>JWT tokens with refresh mechanism</li>
+                    <li>bcrypt password hashing</li>
+                    <li>Rate limiting on sensitive endpoints</li>
+                    <li>CORS protection with whitelisted origins</li>
+                    <li>Pre-commit hooks with detect-secrets for credential scanning</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🛡️ Data Protection</h3>
+                <ul>
+                    <li><strong>Encrypted birth data storage:</strong> Custom encrypted types for sensitive fields</li>
+                    <li><strong>Audit logging:</strong> Complete trail of data access and modifications</li>
+                    <li><strong>GDPR compliance:</strong> Full data deletion service with cascading cleanup</li>
+                    <li><strong>Consent management:</strong> Granular user consent tracking</li>
+                    <li><strong>Request logging:</strong> Security monitoring and incident response</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+                <pre>
+<span class="comment"># Encrypted Types (SQLAlchemy custom types)</span>
+<span class="keyword">class</span> EncryptedString(TypeDecorator):
+    <span class="string">"""Transparently encrypts/decrypts string fields"""</span>
+    <span class="comment"># Uses Fernet symmetric encryption with user-specific salts</span>
+
+<span class="comment"># Audit Logging</span>
+<span class="decorator">@audit_log</span>(action=<span class="string">"chart_accessed"</span>, resource_type=<span class="string">"natal_chart"</span>)
+<span class="keyword">async def</span> <span class="function">get_user_chart</span>(user_id: <span class="keyword">int</span>):
+    <span class="comment"># Automatically logs who accessed what and when</span>
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Universal Links Architecture</h2>
+            <p>One of the most elegant aspects of the architecture is the <strong>universal links</strong> implementation for password resets and email verification:</p>
+            
+            <div class="feature-card">
+                <h3>🔗 The Challenge</h3>
+                <ul>
+                    <li>Email links need to work across platforms (iOS, Android, desktop)</li>
+                    <li>Mobile users should open the native app automatically</li>
+                    <li>Desktop users or users without the app need a web fallback</li>
+                    <li>Can't use custom URL schemes (personalastrologer://) because they fail on desktop</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>✅ The Solution</h3>
+                <p>Email contains: <code>https://app.personalastrologer.com/auth/reset-password.html?token=abc123</code></p>
+                <ul>
+                    <li><strong>iOS User with App:</strong> iOS detects universal link pattern → Automatically opens native app → App receives deep link → Shows ResetPasswordScreen</li>
+                    <li><strong>Android User with App:</strong> Android App Links work the same way → Native app opens with deep link</li>
+                    <li><strong>User Without App / Desktop User:</strong> Opens in browser (Safari, Chrome, etc.) → Shows HTML page with password reset form → Form calls API directly → Password reset complete</li>
+                </ul>
+            </div>
+            
+            <p>This architecture provides seamless cross-platform functionality with intelligent fallbacks. The HTML landing pages are served by a separate web server (nginx/Vercel/Cloudflare in production) and are NOT part of the React Native app bundle.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Astrology Engine: Real Calculations</h2>
+            <p>The heart of the platform is the Kerykeion integration, which provides accurate astronomical calculations:</p>
+            
+            <div class="code-block">
+                <pre>
+<span class="keyword">class</span> <span class="class">KerykeionClient</span>:
+    <span class="string">"""Client for external Kerykeion astrology service (port 5333)"""</span>
+    
+    <span class="keyword">async def</span> <span class="function">get_individual_natal_chart</span>(
+        birth_data: <span class="keyword">dict</span>,
+        tradition: <span class="keyword">str</span> = <span class="string">"modern"</span>,
+        symbols: <span class="keyword">bool</span> = <span class="keyword">True</span>
+    ) -> <span class="keyword">dict</span>:
+        <span class="string">"""
+        Calculate natal chart with:
+        - Planetary positions (Sun, Moon, planets, asteroids)
+        - Houses (Placidus, Koch, Equal, etc.)
+        - Aspects (conjunctions, trines, squares, etc.)
+        - Supports: modern, traditional, vedic, kabbalah
+        """</span>
+    
+    <span class="keyword">async def</span> <span class="function">get_individual_transits</span>(
+        birth_data: <span class="keyword">dict</span>,
+        target_date: date
+    ) -> <span class="keyword">dict</span>:
+        <span class="string">"""
+        Calculate transits for any date:
+        - Current planetary positions
+        - Aspects to natal planets
+        - Transit interpretations
+        """</span>
+    
+    <span class="keyword">async def</span> <span class="function">get_synastry_compatibility</span>(
+        person1_birth_data: <span class="keyword">dict</span>,
+        person2_birth_data: <span class="keyword">dict</span>
+    ) -> <span class="keyword">dict</span>:
+        <span class="string">"""
+        Relationship compatibility analysis:
+        - Inter-chart aspects
+        - Compatibility scores
+        - Synastry interpretations
+        """</span>
+                </pre>
+            </div>
+            
+            <p>The service runs independently (microservice architecture) and provides a RESTful API for all astrological traditions. Charts are cached in Redis and encrypted in PostgreSQL for performance and privacy.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>AI Integration: Context-Aware Interpretations</h2>
+            <p>The AI service generates four types of content:</p>
+            
+            <ol>
+                <li><strong>Category Summaries:</strong> Brief, engaging previews (e.g., "Romance is heating up this week!")</li>
+                <li><strong>Detailed Readings:</strong> In-depth analysis for each category</li>
+                <li><strong>Conversational Chat:</strong> Contextual Q&A with access to user's chart</li>
+                <li><strong>Transit Reports:</strong> Weekly/monthly forecasts combining natal + transits</li>
+            </ol>
+            
+            <div class="code-block">
+                <pre>
+<span class="comment"># ai_service.py - OpenAI/Claude integration</span>
+<span class="keyword">class</span> <span class="class">AIService</span>:
+    <span class="keyword">async def</span> <span class="function">generate_horoscope</span>(
+        category: <span class="keyword">str</span>,
+        natal_chart: <span class="keyword">dict</span>,
+        transits: <span class="keyword">dict</span>,
+        context: <span class="keyword">dict</span>
+    ) -> <span class="keyword">dict</span>:
+        <span class="string">"""
+        Generate personalized horoscope using:
+        - User's natal chart data
+        - Current transits
+        - Historical conversation context
+        - Category-specific prompts
+        
+        Returns 4 text variants for different UX contexts
+        """</span>
+    
+    <span class="keyword">async def</span> <span class="function">chat_with_context</span>(
+        user_message: <span class="keyword">str</span>,
+        conversation_history: <span class="keyword">list</span>,
+        natal_chart: <span class="keyword">dict</span>
+    ) -> <span class="keyword">str</span>:
+        <span class="string">"""
+        Conversational AI with astrological knowledge:
+        - Remembers conversation context
+        - Has access to user's chart
+        - Can reference specific placements
+        - Provides practical advice
+        """</span>
+                </pre>
+            </div>
+            
+            <p>The AI agents are specialized using LangChain with different astrological traditions built into their prompts. Users can choose their preferred approach (Western psychological, Vedic predictive, etc.).</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Database Schema Highlights</h2>
+            <p>The PostgreSQL schema supports the hierarchical category system and relationship tracking:</p>
+            
+            <div class="code-block">
+                <pre>
+<span class="comment">-- Users with encrypted birth data</span>
+<span class="keyword">CREATE TABLE</span> users (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    email <span class="keyword">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">UNIQUE NOT NULL</span>,
+    encrypted_birth_date <span class="keyword">BYTEA</span>,  <span class="comment">-- Encrypted</span>
+    encrypted_birth_time <span class="keyword">BYTEA</span>,  <span class="comment">-- Encrypted</span>
+    encrypted_birth_location <span class="keyword">BYTEA</span>,  <span class="comment">-- Encrypted</span>
+    timezone <span class="keyword">VARCHAR</span>(<span class="number">50</span>),
+    created_at <span class="keyword">TIMESTAMP DEFAULT NOW</span>()
+);
+
+<span class="comment">-- Hierarchical categories (general + relationship-specific)</span>
+<span class="keyword">CREATE TABLE</span> categories (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    name <span class="keyword">VARCHAR</span>(<span class="number">100</span>),
+    parent_id <span class="keyword">INTEGER REFERENCES</span> categories(id),
+    category_type <span class="keyword">VARCHAR</span>(<span class="number">20</span>),  <span class="comment">-- 'general' or 'relationship'</span>
+    icon <span class="keyword">VARCHAR</span>(<span class="number">50</span>),
+    sort_order <span class="keyword">INTEGER</span>
+);
+
+<span class="comment">-- Category content (4 text variants per day)</span>
+<span class="keyword">CREATE TABLE</span> category_content (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    user_id <span class="keyword">INTEGER REFERENCES</span> users(id),
+    category_id <span class="keyword">INTEGER REFERENCES</span> categories(id),
+    content_date <span class="keyword">DATE</span>,
+    variant_1 <span class="keyword">TEXT</span>,  <span class="comment">-- Brief summary</span>
+    variant_2 <span class="keyword">TEXT</span>,  <span class="comment">-- Detailed reading</span>
+    variant_3 <span class="keyword">TEXT</span>,  <span class="comment">-- Action-focused</span>
+    variant_4 <span class="keyword">TEXT</span>,  <span class="comment">-- Conversational</span>
+    generated_at <span class="keyword">TIMESTAMP</span>
+);
+
+<span class="comment">-- Relationships for synastry analysis</span>
+<span class="keyword">CREATE TABLE</span> relationships (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    user_id <span class="keyword">INTEGER REFERENCES</span> users(id),
+    entity_id <span class="keyword">INTEGER REFERENCES</span> entities(id),
+    relationship_type <span class="keyword">VARCHAR</span>(<span class="number">50</span>),  <span class="comment">-- 'partner', 'parent', 'coworker'</span>
+    created_at <span class="keyword">TIMESTAMP</span>
+);
+
+<span class="comment">-- Audit log for security compliance</span>
+<span class="keyword">CREATE TABLE</span> audit_log (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    user_id <span class="keyword">INTEGER</span>,
+    action <span class="keyword">VARCHAR</span>(<span class="number">100</span>),
+    resource_type <span class="keyword">VARCHAR</span>(<span class="number">50</span>),
+    resource_id <span class="keyword">VARCHAR</span>(<span class="number">255</span>),
+    ip_address <span class="keyword">VARCHAR</span>(<span class="number">45</span>),
+    user_agent <span class="keyword">TEXT</span>,
+    timestamp <span class="keyword">TIMESTAMP DEFAULT NOW</span>()
+);
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Development Workflow</h2>
+            <p>The project demonstrates professional development practices:</p>
+            
+            <div class="feature-card">
+                <h3>🐳 Docker Compose Development</h3>
+                <ul>
+                    <li>Backend (FastAPI) on port 8000</li>
+                    <li>PostgreSQL with persistent volume</li>
+                    <li>Redis cache</li>
+                    <li>Kerykeion service on port 5333</li>
+                    <li>Hot reload for rapid iteration</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🧪 Testing Strategy</h3>
+                <ul>
+                    <li><strong>Backend:</strong> pytest with async support, 85%+ coverage</li>
+                    <li><strong>Mobile:</strong> Jest + React Native Testing Library, 75%+ coverage</li>
+                    <li><strong>E2E:</strong> Playwright for critical user flows</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🚀 CI/CD Pipeline</h3>
+                <ul>
+                    <li>GitHub Actions for automated testing and deployment</li>
+                    <li>Backend: Docker build → Railway/DigitalOcean deployment</li>
+                    <li>Mobile: EAS Build for iOS/Android → App Store/Play Store submission</li>
+                    <li>CodePush for OTA updates (instant bug fixes)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🔍 Code Quality</h3>
+                <ul>
+                    <li>Pre-commit hooks (detect-secrets, Black, ESLint, Prettier)</li>
+                    <li>Type hints on all Python functions (mypy strict mode)</li>
+                    <li>TypeScript strict mode</li>
+                    <li>Zero secrets in commits</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Performance Optimizations</h2>
+            
+            <div class="feature-card">
+                <h3>⚡ Backend</h3>
+                <ul>
+                    <li>Redis caching for chart calculations (expensive astronomical math)</li>
+                    <li>Database query optimization with proper indexes</li>
+                    <li>Async/await for non-blocking I/O</li>
+                    <li>Connection pooling for PostgreSQL</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📱 Mobile</h3>
+                <ul>
+                    <li>React Query for intelligent server state caching</li>
+                    <li>Lazy loading for screens</li>
+                    <li>Optimized list rendering with FlatList</li>
+                    <li>Image caching</li>
+                    <li>Offline-first architecture</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🤖 AI</h3>
+                <ul>
+                    <li>Batch generation of category content (4 variants in one call)</li>
+                    <li>Caching of common interpretations</li>
+                    <li>Streaming for conversational chat (better UX)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <div class="highlight-card">
+                <h3>Universal Links Complexity</h3>
+                <p>The universal links architecture required deep understanding of iOS Associated Domains, Android App Links, and web server configurations. The solution elegantly handles all platforms with appropriate fallbacks.</p>
+            </div>
+            
+            <div class="highlight-card">
+                <h3>Encrypted Birth Data</h3>
+                <p>Implementing transparent encryption/decryption in SQLAlchemy required custom TypeDecorator classes and careful key management. Each user has a unique encryption salt, adding defense-in-depth.</p>
+            </div>
+            
+            <div class="highlight-card">
+                <h3>Hierarchical Categories</h3>
+                <p>The category system supports both general categories (Love, Career) and relationship-specific categories (Love with Sarah → Romance, Finances, Communication). This required recursive SQL queries and careful frontend state management.</p>
+            </div>
+            
+            <div class="highlight-card">
+                <h3>AI Context Management</h3>
+                <p>Generating personalized horoscopes requires combining natal chart data, current transits, category context, and conversation history. The prompt engineering ensures relevant, actionable insights without overwhelming the user.</p>
+            </div>
+            
+            <div class="highlight-card">
+                <h3>Cross-Platform Development</h3>
+                <p>React Native + Expo enabled rapid iteration with hot reload, but required careful handling of platform-specific features (Keychain on iOS, Keystore on Android, universal links, push notifications).</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Future Enhancements</h2>
+            <ul>
+                <li><strong>Social Features:</strong> Share insights with friends, compatibility matching</li>
+                <li><strong>Voice Readings:</strong> Text-to-speech for daily horoscopes</li>
+                <li><strong>Wearable Integration:</strong> Apple Watch complications with today's insight</li>
+                <li><strong>Premium Tiers:</strong> Detailed reports, unlimited AI chat, expert consultations</li>
+                <li><strong>Localization:</strong> Multi-language support (Spanish, Hindi, Chinese)</li>
+                <li><strong>Web App:</strong> Progressive web app for desktop users</li>
+                <li><strong>Astrocartography:</strong> Location-based astrology for travel and relocation</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>Personal Astrologer demonstrates how to build a sophisticated, production-ready mobile application with:</p>
+            
+            <ul>
+                <li>Modern backend architecture (FastAPI, async, microservices)</li>
+                <li>Cross-platform mobile (React Native + Expo)</li>
+                <li>Enterprise security (encryption, audit logging, GDPR compliance)</li>
+                <li>AI integration (OpenAI/Claude for personalized content)</li>
+                <li>Professional DevOps (Docker, CI/CD, testing, monitoring)</li>
+                <li>Elegant UX patterns (universal links, offline-first, intelligent caching)</li>
+            </ul>
+            
+            <p>The project showcases expertise in full-stack development, security engineering, AI integration, and cross-platform mobile development. It's a complete, deployable product ready for the App Store and Play Store.</p>
+        </section>
+        
+        <footer class="project-footer">
+            <div class="tech-summary">
+                <h3>Tech Stack Summary</h3>
+                <p><strong>Backend:</strong> Python, FastAPI, PostgreSQL, Redis, SQLAlchemy, Kerykeion</p>
+                <p><strong>Mobile:</strong> React Native, Expo, TypeScript, Redux Toolkit, React Navigation</p>
+                <p><strong>AI:</strong> OpenAI GPT-4, Claude, LangChain</p>
+                <p><strong>DevOps:</strong> Docker, GitHub Actions, Railway, EAS Build</p>
+                <p><strong>Security:</strong> JWT, bcrypt, Fernet encryption, audit logging, detect-secrets</p>
+            </div>
+        </footer>
+    </article>
+</body>
+</html>
