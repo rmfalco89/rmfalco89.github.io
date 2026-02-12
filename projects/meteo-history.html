@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteo History - Weather Data CLI with Mushroom Foraging Intelligence - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Meteo History 🍄</h1>
+            <p class="subtitle">Weather Data CLI with Mushroom Foraging Intelligence</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/meteo-history" target="_blank" class="status-badge github-link">View on GitHub</a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Open-Meteo API</span>
+                    <span class="tech-tag">CLI</span>
+                    <span class="tech-tag">Weather Analysis</span>
+                    <span class="tech-tag">PyYAML</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p><strong>Meteo History</strong> is a Python command-line tool that fetches historical and forecast weather data for any city worldwide, with a unique twist: it analyzes weather patterns to predict optimal mushroom foraging days. Built on the Open-Meteo API, it converts data to imperial units and saves favorite locations for quick access.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Mushroom foraging requires specific weather conditions—consistent rain to hydrate mycelium, followed by dry periods with mild temperatures for fruiting. Checking multiple weather sources manually is tedious and doesn't provide the pattern analysis needed for foraging decisions. Additionally, accessing historical weather data in a clean, terminal-friendly format isn't straightforward.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Implementation</h2>
+            
+            <h3>Core Architecture</h3>
+            <div class="code-block">
+                <pre><code>meteo_history.py          # Main CLI application
+meteo_cities.yaml         # Persistent city database
+meteo-history.sh          # Virtual environment wrapper</code></pre>
+            </div>
+            
+            <h3>Key Features</h3>
+            
+            <div class="feature-card">
+                <h3>1. Smart City Management</h3>
+                <ul>
+                    <li>Geocodes new cities via Open-Meteo Geocoding API</li>
+                    <li>Saves locations with lat/lon for instant recall</li>
+                    <li>Numbered selection for quick access to favorites</li>
+                    <li>Auto-capitalizes city names for consistency</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Flexible Date Input</h3>
+                <ul>
+                    <li>Shorthand notation: <code>14d</code> (14 days), <code>3w</code> (3 weeks)</li>
+                    <li>Full date strings: <code>2026-01-15</code></li>
+                    <li>Default: last 10 days</li>
+                    <li>Handles both historical data (92 days back) and forecasts (16 days ahead)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Mushroom Foraging Algorithm</h3>
+                <p>The tool implements a refined heuristic for Bay Area porcini/chanterelle conditions:</p>
+                
+                <div class="code-block">
+                    <pre><code>def is_good_mushroom_day(i, precip, t_min, t_max, wind_max, 
+                          rain_threshold=1.0, dry_threshold=1.0, 
+                          temp_low=45, temp_high=70, wind_max_ok=25):
+    """
+    Conditions for mushroom fruiting:
+    - Prior 5 days: ≥3 rainy days (>1mm) for mycelium hydration
+    - Current day: Dry (<1mm precip) to allow emergence
+    - Avg temp: 45-70°F (mild for fruiting)
+    - Max wind: <25 km/h (15.5 mph) to prevent drying
+    """
+    prior_precip = precip[i-5:i]
+    rainy_days = sum(1 for p in prior_precip if p > rain_threshold)
+    
+    is_dry_today = precip[i] < dry_threshold
+    avg_temp_f = ((t_min[i] + t_max[i]) / 2) * 9/5 + 32
+    
+    temp_ok = temp_low <= avg_temp_f <= temp_high
+    wind_ok = wind_max[i] < wind_max_ok
+    
+    return rainy_days >= 3 and is_dry_today and temp_ok and wind_ok</code></pre>
+                </div>
+                
+                <p>This logic marks promising days with a 🍄 emoji in the output.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Unit Conversion</h3>
+                <ul>
+                    <li>Temperature: °C → °F</li>
+                    <li>Precipitation: mm → inches</li>
+                    <li>Wind: km/h → mph</li>
+                </ul>
+                <p>All conversions happen inline, making data immediately useful for US users.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Sample Output</h2>
+            <div class="code-block">
+                <pre><code>Daily weather for Pacifica (37.61, -122.49) from 2026-02-02 to 2026-02-12:
+----------------------------------------------------------------------------------------------------
+Date         High °F  Low °F   Max Wind mph Precip in  Mushrooms?  
+----------------------------------------------------------------------------------------------------
+2026-02-02   58.5     47.8     18.6         0.12                   
+2026-02-03   59.7     48.9     12.4         0.08                   
+2026-02-04   61.2     49.3     8.7          0.00                   
+2026-02-05   62.8     50.1     6.2          0.00                   
+2026-02-06   64.1     51.7     9.3          0.05                   
+2026-02-07   60.3     52.4     14.8         0.18       🍄          
+2026-02-08   58.9     50.2     11.2         0.03       🍄</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Environment Setup</h2>
+            <p>The project includes a shell wrapper that handles virtual environment activation:</p>
+            
+            <div class="code-block">
+                <pre><code>#!/bin/bash
+VENV_PATH="$HOME/virtualenvs/meteo-history"
+SCRIPT_PATH="/Users/rmarino/personal_projects/meteo_history/meteo_history.py"
+
+source "$VENV_PATH/bin/activate"
+python "$SCRIPT_PATH"
+deactivate</code></pre>
+            </div>
+            
+            <p>This allows running <code>meteo-history.sh</code> from anywhere without manual venv management.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <h3>API Integration</h3>
+            <ul>
+                <li><strong>Open-Meteo Forecast API:</strong> Historical + forecast data</li>
+                <li><strong>Open-Meteo Geocoding API:</strong> City → lat/lon conversion</li>
+                <li>Automatic timezone handling via <code>timezone=auto</code></li>
+                <li>Smart date range capping (16-day forecast max, 92-day history max)</li>
+            </ul>
+            
+            <h3>Data Parsing</h3>
+            <div class="code-block">
+                <pre><code>daily = weather_data['daily']
+dates = daily['time']
+t_max = daily['temperature_2m_max']
+t_min = daily['temperature_2m_min']
+wind_max = daily['wind_speed_10m_max']
+precip = daily['precipitation_sum']</code></pre>
+            </div>
+            
+            <p>All data arrives as parallel arrays indexed by day, enabling efficient windowed analysis for the mushroom algorithm.</p>
+            
+            <h3>Error Handling</h3>
+            <ul>
+                <li>Geocoding failures: retry with different name</li>
+                <li>API errors: clear status messages</li>
+                <li>Invalid date inputs: fallback to default</li>
+                <li>Missing venv: installation instructions</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Usage</h2>
+            <p>This tool was built for practical Bay Area mushroom foraging, where:</p>
+            <ul>
+                <li>Coastal fog + winter rain create ideal conditions</li>
+                <li>Timing is critical (mushrooms appear days after rain)</li>
+                <li>Multiple locations need monitoring (coast vs. hills)</li>
+            </ul>
+            
+            <p>The saved cities feature means checking Pacifica, Santa Cruz, and East Bay spots takes seconds, not minutes.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Lessons Learned</h2>
+            <ol>
+                <li><strong>Domain-specific heuristics add huge value:</strong> The mushroom logic turns generic weather data into actionable foraging intel</li>
+                <li><strong>Unit conversion matters:</strong> Imperial units make the tool immediately useful without mental math</li>
+                <li><strong>Smart defaults reduce friction:</strong> <code>14d</code> is faster than <code>2026-01-29</code></li>
+                <li><strong>Persistent state improves UX:</strong> Saving cities makes repeated use effortless</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Potential Enhancements</h2>
+            <ul>
+                <li><strong>Historical API integration:</strong> Access weather data beyond 92 days</li>
+                <li><strong>Configurable thresholds:</strong> Let users tune mushroom parameters for their region/species</li>
+                <li><strong>Export to CSV:</strong> Enable spreadsheet analysis or charting</li>
+                <li><strong>Multiple species profiles:</strong> Different logic for morels, oysters, etc.</li>
+                <li><strong>Map integration:</strong> Show saved cities on a visual map</li>
+                <li><strong>Rain radar:</strong> Add precipitation intensity and cloud cover</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technology Stack</h2>
+            <ul>
+                <li><strong>Python 3:</strong> Core language</li>
+                <li><strong>requests:</strong> HTTP client for API calls</li>
+                <li><strong>PyYAML:</strong> City database serialization</li>
+                <li><strong>Open-Meteo API:</strong> Free weather data (no API key required)</li>
+                <li><strong>Bash:</strong> Virtual environment wrapper</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>Meteo History demonstrates how a focused CLI tool can solve a specific problem elegantly. By combining weather data access, smart date handling, and domain-specific analysis (mushroom foraging), it transforms a generic API into a specialized decision-support tool. The persistent city database and flexible input syntax make it practical for daily use, while the clean tabular output fits naturally into a terminal workflow.</p>
+            
+            <p>It's a great example of building "sharp tools" that do one thing well—especially when that thing involves fungus. 🍄</p>
+        </section>
+    </article>
+    
+    <footer class="project-footer">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </footer>
+</body>
+</html>
