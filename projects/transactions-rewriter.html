@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransactionsRewriter - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>TransactionsRewriter</h1>
+            <p class="subtitle">Intelligent Financial Transaction Categorization System</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/TransactionsRewriter" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Google Sheets API</span>
+                    <span class="tech-tag">YAML</span>
+                    <span class="tech-tag">Regex</span>
+                    <span class="tech-tag">Pandas</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>When Mint shut down its service, millions of users lost their automatic transaction categorization system. While alternatives like Personal Capital, Monarch, and Fidelity Full View exist for aggregating bank accounts, none offered the flexible, rule-based categorization that power users rely on to maintain detailed financial records.</p>
+            <p>Manual categorization is tedious and error-prone. You need a system that can:</p>
+            <ul>
+                <li>Automatically identify "Costco" as groceries (unless "gas" appears in the description)</li>
+                <li>Distinguish between "UBER EATS" delivery and "UBER.COM" rides</li>
+                <li>Handle hundreds of edge cases across multiple accounts</li>
+                <li>Process thousands of transactions per year</li>
+                <li>Preserve original data while applying transformations</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p><strong>TransactionsRewriter</strong> is a Python-based financial transaction processor that automatically categorizes and normalizes transaction descriptions using a powerful YAML-based rules engine. It bridges the gap between transaction export services and personal finance tracking by applying customizable, regex-powered rules to clean up messy bank data.</p>
+            
+            <h3>Core Features</h3>
+            <ul class="highlights-list">
+                <li><strong>Rule-Based Processing:</strong> YAML configuration files define regex patterns for matching and transforming transactions</li>
+                <li><strong>Multi-Source Integration:</strong> Import from Mint, Fidelity Full View, Empower, or any CSV format</li>
+                <li><strong>Google Sheets Backend:</strong> Two-way sync with transaction ledger and category analysis sheets</li>
+                <li><strong>Smart Pattern Matching:</strong> Positive/negative regex patterns for precise disambiguation</li>
+                <li><strong>Audit Trail:</strong> Always preserves original values alongside modifications</li>
+                <li><strong>Flexible CLI:</strong> Date ranges, rule filtering, service selection, modified/unmodified isolation</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Architecture</h2>
+            
+            <div class="architecture-diagram">
+                <pre>
+┌─────────────────────────────────────────────────────────────┐
+│  Input Layer: Multi-Source CSV Import                       │
+├─────────────────────────────────────────────────────────────┤
+│  • Fidelity Full View exports                               │
+│  • Mint transaction history                                 │
+│  • Empower (Personal Capital) data                          │
+│  • Custom CSV formats                                       │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Rule Engine: YAML-Powered Pattern Matching                │
+├─────────────────────────────────────────────────────────────┤
+│  • Load all *.yaml rule files from rules/ directory         │
+│  • Sequential rule application (order matters!)             │
+│  • Positive + negative regex patterns                       │
+│  • Amount-based matching                                    │
+│  • Account-level filters                                    │
+│  • Service-specific rules                                   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Transaction Model: Audit-First Design                     │
+├─────────────────────────────────────────────────────────────┤
+│  • Preserve original: description, category, account        │
+│  • Track modifications: set of applied rule names           │
+│  • Deduplication: (date, account, amount) key               │
+│  • Service priority: Fidelity > Mint > Empower              │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Output Layer: Google Sheets + CSV                         │
+├─────────────────────────────────────────────────────────────┤
+│  • Transaction Ledger: main database                        │
+│  • Category Analysis: aggregated spending                   │
+│  • Manual Overrides: user edits tracked separately          │
+│  • CSV Export: for budgeting tools                          │
+└─────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Rule System: YAML-Powered Intelligence</h2>
+            
+            <div class="feature-card">
+                <h3>Example: Disambiguating Costco Transactions</h3>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px; overflow-x: auto;">
+<code># Groceries.yaml
+- name: "description#groceries#food"
+  description_pattern: ".*(Costco|SAFEWAY|TRADER JOE).*"
+  description_negative_pattern: "\\bgas\\b"
+  new_description_pattern: "\\1"
+  new_category: "Groceries"
+  new_sub_category: "food"
+  tests:
+    positive_examples:
+      - description: 'Costco'
+        new_description: 'Costco'
+    negative_examples:
+      - description: 'Costco gas'
+</code></pre>
+                <p>This rule matches "Costco" but excludes transactions containing "gas", enabling automatic separation of grocery trips from gas station visits.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Pattern Matching Modes</h3>
+                <table style="width:100%; border-collapse: collapse; margin-top: 16px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">Mode</th>
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">Behavior</th>
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;"><code>find</code></td>
+                            <td style="padding: 8px;">Standard regex search</td>
+                            <td style="padding: 8px;">Most common (default)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;"><code>exact_match</code></td>
+                            <td style="padding: 8px;">Anchored patterns (^...$)</td>
+                            <td style="padding: 8px;">Precise full-string matches</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;"><code>partial_match</code></td>
+                            <td style="padding: 8px;">Contains logic (^.*...*$)</td>
+                            <td style="padding: 8px;">Convenience wrapper</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Negative Patterns: The Disambiguation Superpower</h3>
+                <p>Critical for handling ambiguous merchant names:</p>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px; overflow-x: auto;">
+<code>- name: "description#dining#uber_eats"
+  description_pattern: '.*uber.*?eats.*'
+  new_description_pattern: 'UberEats'
+  new_category: 'Dining'
+  new_sub_category: 'delivery'
+  tests:
+    positive_examples:
+      - description: 'UBER   EATS              HELP.UBER.COMCA'
+    negative_examples:
+      - description: 'UBER.COM'  # Ride service, not food!
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Data Flow & Processing</h2>
+            
+            <ol style="line-height: 1.8;">
+                <li><strong>Export</strong> transactions from aggregation service (CSV)</li>
+                <li><strong>Import</strong> via command-line: <code>--input-files transactions.csv</code></li>
+                <li><strong>Parse</strong> into Transaction objects with original value tracking</li>
+                <li><strong>Apply</strong> rules sequentially (order matters for cascading logic)</li>
+                <li><strong>Deduplicate</strong> using (date, account, amount) key</li>
+                <li><strong>Sync</strong> to Google Sheets transaction ledger</li>
+                <li><strong>Analyze</strong> by running category aggregation worker</li>
+                <li><strong>Review</strong> in spreadsheet, make manual overrides as needed</li>
+                <li><strong>Re-export</strong> for budgeting tools (CSV)</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Technical Insights</h2>
+            
+            <div class="feature-card">
+                <h3>1. Regex Capture Groups for Smart Rewriting</h3>
+                <p>Instead of hardcoding replacement text, use capture groups to preserve merchant identity:</p>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+<code>description_pattern: "(SAFEWAY|TRADER JOE|SPROUTS)"
+new_description_pattern: "\\1"  # Preserves original capitalization
+</code></pre>
+                <p>Result: "SAFEWAY #2341" → "SAFEWAY" (without losing the merchant name)</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Service Preference for Deduplication</h3>
+                <p>When multiple services report the same transaction:</p>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+<code>service_preference_list: 
+- "fidelity"      # Prefer Fidelity's data quality
+- "mint"          # Then Mint
+- "empower"       # Last resort
+</code></pre>
+                <p>Keeps the highest-priority version automatically.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Manual Override Tracking</h3>
+                <p>Transactions edited directly in Google Sheets are moved to a "Modified manually" worksheet and excluded from future rule applications. This prevents overwriting user corrections.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. API Rate Limiting with Request Queue</h3>
+                <p>To avoid Google Sheets API quotas:</p>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+<code>class APIRequestQueue:
+    def add_request(self, func, *args, **kwargs):
+        """Queue API calls for batched execution"""
+        self.queue.append((func, args, kwargs))
+    
+    def wait_until_finished(self):
+        """Execute all queued requests with rate limiting"""
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Command-Line Interface</h2>
+            
+            <div class="feature-card">
+                <h3>Basic Usage</h3>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+<code>python src/main.py --user "AmRi633" \
+  --process-transactions \
+  --start-date 2024-01-01 \
+  --end-date 2024-12-31 \
+  --input-files "exports/*.csv"
+</code></pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Advanced Filtering</h3>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+<code># Test specific rules only
+python main.py -u "AmRi633" \
+  --rule "groceries.*" \
+  --only-modified
+
+# Process only Fidelity transactions
+python main.py -u "AmRi633" \
+  --service "fidelity" \
+  --start-date 2024-11-01
+
+# Find unmodified transactions (need rules)
+python main.py -u "AmRi633" \
+  --only-unmodified \
+  --output uncategorized.csv
+</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Impact</h2>
+            
+            <ul class="highlights-list">
+                <li><strong>10,000+ transactions/year</strong> processed automatically</li>
+                <li><strong>15+ category families</strong> with 50+ subcategories for detailed tracking</li>
+                <li><strong>Multi-user support</strong> with isolated Google Sheet per user</li>
+                <li><strong>Historical analysis</strong> enables year-over-year budget comparisons</li>
+                <li><strong>Zero API costs</strong> using free Google Sheets tier</li>
+                <li><strong>Full audit trail</strong> with original value preservation</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Monthly Workflow</h2>
+            
+            <ol style="line-height: 1.8;">
+                <li>Export last 30 days from Fidelity Full View (CSV)</li>
+                <li>Run: <code>python main.py -u AmRi633 --process-transactions --start-date $(date -d '30 days ago' +%Y-%m-%d)</code></li>
+                <li>Open Google Sheets "Category Analysis" workbook</li>
+                <li>Review spending by category/subcategory</li>
+                <li>Identify uncategorized transactions</li>
+                <li>Add new rules to <code>rules/*.yaml</code> for future automation</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Lessons Learned</h2>
+            
+            <div class="feature-card">
+                <p><strong>Financial data is messy.</strong> Banks use inconsistent formatting, abbreviations, and special characters. Robust regex patterns with negative lookaheads are essential.</p>
+            </div>
+            
+            <div class="feature-card">
+                <p><strong>Preserve original data always.</strong> Users need to see what changed and why. The audit trail builds trust and enables rule debugging.</p>
+            </div>
+            
+            <div class="feature-card">
+                <p><strong>YAML is perfect for non-technical users.</strong> Financial rules are business logic, not code. YAML files can be edited by anyone with basic pattern-matching knowledge.</p>
+            </div>
+            
+            <div class="feature-card">
+                <p><strong>Google Sheets is underrated as a database.</strong> For personal finance (thousands of rows, not millions), the collaborative editing and zero-cost hosting are unbeatable.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Future Enhancements</h2>
+            
+            <ul>
+                <li><strong>AI-assisted rule generation:</strong> Use LLM to suggest rules from uncategorized transactions</li>
+                <li><strong>Web dashboard:</strong> Replace command-line with browser-based interface</li>
+                <li><strong>Plaid integration:</strong> Direct bank API connection (no CSV export needed)</li>
+                <li><strong>Budget alerting:</strong> Slack/email notifications when spending exceeds thresholds</li>
+                <li><strong>Merchant normalization:</strong> Global database of cleaned merchant names</li>
+            </ul>
+        </section>
+        
+        <section class="content-section conclusion">
+            <p>TransactionsRewriter proves that you don't need a $100/year subscription service to get intelligent transaction categorization. With Python, regex, and Google Sheets, you can build a custom financial pipeline that outperforms commercial alternatives—and you own the data.</p>
+            <p><strong>For users who lost Mint and want control over their financial data, this is the self-hosted solution.</strong></p>
+        </section>
+    </article>
+    
+    <script src="../js/project.js"></script>
+</body>
+</html>
