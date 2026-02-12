@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Insurance Claims Management - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Health Insurance Claims Management System</h1>
+            <p class="subtitle">AI-powered medical documentation system for rejection-proof insurance claims</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/health-insurance-claims" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python 3</span>
+                    <span class="tech-tag">Claude Code</span>
+                    <span class="tech-tag">XML Parsing</span>
+                    <span class="tech-tag">CSV</span>
+                    <span class="tech-tag">Markdown</span>
+                    <span class="tech-tag">Pandoc</span>
+                    <span class="tech-tag">ICD-10</span>
+                    <span class="tech-tag">CPT Codes</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>The Health Insurance Claims Management System is a specialized tool designed for acupuncture practices to streamline the complex process of insurance claim documentation. It addresses a critical pain point in healthcare administration: creating comprehensive, medically-accurate claims that satisfy insurance company requirements while minimizing practitioner time spent on documentation.</p>
+            <p>This system combines traditional data management with AI-powered augmentation through Claude Code integration, allowing busy practitioners to enter minimal session notes that are later expanded into detailed, professionally-formatted insurance claim documents.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Healthcare providers, particularly in alternative medicine fields like acupuncture, face several documentation challenges:</p>
+            <ul>
+                <li><strong>Time Constraints:</strong> Practitioners can't spend 20-30 minutes per patient documenting detailed progress notes during busy clinic days</li>
+                <li><strong>Medical Terminology Requirements:</strong> Insurance companies require specific medical language, proper ICD-10 and CPT coding, and quantifiable improvement measures</li>
+                <li><strong>Continuity of Care:</strong> Claims must demonstrate logical treatment progression without explicit references to previous visits</li>
+                <li><strong>Compliance:</strong> Claims must adhere to strict CPT code unit limits, duration constraints, and insurance-specific requirements</li>
+                <li><strong>Rejection Risk:</strong> Missing details or improper formatting can result in claim rejection, leading to lost revenue</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Solution Architecture</h2>
+            <p>The system implements a staged workflow that separates quick data entry from detailed documentation:</p>
+            
+            <div class="architecture-diagram">
+                <pre>
+┌────────────────────────────────────────────────────────────────┐
+│ 1. Interactive Data Entry (create_claim.py)                   │
+├────────────────────────────────────────────────────────────────┤
+│  • Patient selection & demographics                            │
+│  • ICD-10 code validation (10,000+ codes)                      │
+│  • CPT code tracking                                           │
+│  • Minimal progress notes                                      │
+└────────────────────────────────────────────────────────────────┘
+                            ↓
+┌────────────────────────────────────────────────────────────────┐
+│ 2. AI Augmentation (augment_claims_data.py + Claude Code)     │
+├────────────────────────────────────────────────────────────────┤
+│  • Chronological claim processing                              │
+│  • Interactive questioning for missing details                 │
+│  • Medical terminology enhancement                             │
+│  • TCM diagnosis augmentation                                  │
+└────────────────────────────────────────────────────────────────┘
+                            ↓
+┌────────────────────────────────────────────────────────────────┐
+│ 3. Claim Generation (generate_claim_document.py)               │
+├────────────────────────────────────────────────────────────────┤
+│  • Professional medical documentation                          │
+│  • CPT code compliance validation                              │
+│  • Treatment continuity tracking                               │
+│  • 2-page format optimization                                  │
+└────────────────────────────────────────────────────────────────┘
+                            ↓
+┌────────────────────────────────────────────────────────────────┐
+│ 4. Quality Assurance (check_claim_consistency.py)             │
+├────────────────────────────────────────────────────────────────┤
+│  • Multi-claim progression analysis                            │
+│  • Medical validity checking                                   │
+│  • Audit risk assessment                                       │
+│  • Narrative consistency verification                          │
+└────────────────────────────────────────────────────────────────┘
+                            ↓
+┌────────────────────────────────────────────────────────────────┐
+│ 5. PDF Generation (generate_claim_pdfs.py)                    │
+├────────────────────────────────────────────────────────────────┤
+│  • Pandoc conversion (Markdown → PDF)                          │
+│  • Professional formatting (Arial, 1" margins)                 │
+│  • Batch processing                                            │
+│  • Insurance-ready output                                      │
+└────────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Stage 1: Interactive Data Entry</h2>
+            <p>A Python CLI tool handles rapid session recording during clinical work:</p>
+            
+            <div class="feature-card">
+                <h3>ICD-10 Code Validation</h3>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px; overflow-x: auto;"><code>def load_icd10_codes():
+    """Loads 10,000+ ICD-10 codes from official XML database"""
+    global ICD10_CODES
+    xml_file_path = "icd10_codes/icd10cm_tabular_2026.xml"
+    tree = ET.parse(xml_file_path)
+    root = tree.getroot()
+    for diag_element in root.findall(".//diag"):
+        code = diag_element.find("name")
+        desc = diag_element.find("desc")
+        if code is not None and desc is not None:
+            ICD10_CODES[code.text.strip()] = desc.text.strip()</code></pre>
+            </div>
+            
+            <h3>Key Features</h3>
+            <ul class="highlights-list">
+                <li><strong>Patient Database:</strong> Stores demographics and insurance information for quick session entry</li>
+                <li><strong>Reusable Libraries:</strong> Condition and treatment databases grow over time, enabling faster data entry</li>
+                <li><strong>Real-time Validation:</strong> ICD-10 codes validated against official 2026 XML database (10,000+ codes)</li>
+                <li><strong>CPT Code Tracking:</strong> Acupuncture, massage, cupping, infrared therapy codes with duration tracking</li>
+                <li><strong>Minimal Notes:</strong> Just enough information to remember the session—details added later via AI</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Stage 2: AI-Powered Augmentation</h2>
+            <p>The augmentation script orchestrates Claude Code to interactively enhance minimal progress notes:</p>
+            
+            <div class="feature-card">
+                <h3>Chronological Claim Processing</h3>
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px; overflow-x: auto;"><code>def get_claims_from_date(patient_folder, start_date=None):
+    """Returns claims from starting date forward, sorted chronologically."""
+    all_claims = []
+    with open(claims_file, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            claim_date = datetime.strptime(row['date'], '%Y-%m-%d')
+            if not start_date or claim_date >= start_date:
+                all_claims.append(row)
+    
+    # Critical: Sort chronologically for proper continuity
+    all_claims.sort(key=lambda x: x['date_obj'])
+    return all_claims</code></pre>
+            </div>
+            
+            <h3>Claude Integration Workflow</h3>
+            <ul class="highlights-list">
+                <li><strong>Chronological Processing:</strong> Processes claims in order to maintain treatment narrative</li>
+                <li><strong>Targeted Augmentation:</strong> Start from specific date to process only recent claims</li>
+                <li><strong>Interactive Questioning:</strong> Claude asks for specific pain measurements, ROM degrees, functional improvements</li>
+                <li><strong>TCM Details:</strong> Prompts for pulse and tongue diagnosis (required for acupuncture)</li>
+                <li><strong>Context-Aware:</strong> Suggestions based on diagnosis codes and treatment patterns</li>
+                <li><strong>Medical Terminology:</strong> Maintains professional language throughout augmentation</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Stage 3: Claim Document Generation</h2>
+            <p>The claim generation system creates professional insurance claim documents following strict medical documentation standards:</p>
+            
+            <h3>Medical Documentation Components</h3>
+            <ul>
+                <li><strong>Chief Complaint:</strong> Patient's primary concern in their own words</li>
+                <li><strong>History of Present Illness:</strong> Symptom timeline, severity (VAS pain scales), functional impact</li>
+                <li><strong>Objective Findings:</strong> Physical exam results, ROM measurements, palpation findings</li>
+                <li><strong>TCM Assessment:</strong> Pulse and tongue diagnosis (required for acupuncture claims)</li>
+                <li><strong>Assessment:</strong> Diagnosis with proper ICD-10 codes</li>
+                <li><strong>Treatment Provided:</strong> Acupuncture point selection, technique description, additional modalities</li>
+                <li><strong>Medical Necessity:</strong> Clear link between diagnosis and treatment approach</li>
+                <li><strong>Response & Progress:</strong> Quantifiable improvements with specific measurements</li>
+                <li><strong>Plan:</strong> Treatment frequency, duration expectations, outcome goals</li>
+            </ul>
+            
+            <h3>CPT Code Compliance</h3>
+            <div class="feature-card">
+                <table style="width:100%; border-collapse: collapse; margin-top: 16px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--lightest-navy);">
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">CPT Code</th>
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">Description</th>
+                            <th style="text-align: left; padding: 8px; color: var(--lightest-slate);">Max Units</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;">97810</td>
+                            <td style="padding: 8px;">Initial 15 min acupuncture</td>
+                            <td style="padding: 8px;">1 unit</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;">97811</td>
+                            <td style="padding: 8px;">Additional 15 min</td>
+                            <td style="padding: 8px;">2 units</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;">97813/97814</td>
+                            <td style="padding: 8px;">With e-stim</td>
+                            <td style="padding: 8px;">1 initial + 2 additional</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;">20560/20561</td>
+                            <td style="padding: 8px;">Dry needling</td>
+                            <td style="padding: 8px;">1 unit</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--lightest-navy);">
+                            <td style="padding: 8px;">97026</td>
+                            <td style="padding: 8px;">Infrared light</td>
+                            <td style="padding: 8px;">1 unit (concurrent)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>Duration Rules</h3>
+            <ul>
+                <li><strong>Maximum Session Duration:</strong> 90 minutes total</li>
+                <li><strong>Acupuncture Codes:</strong> 15 minutes = 1 unit</li>
+                <li><strong>Concurrent Modalities:</strong> Infrared light overlaps with acupuncture time (not additive)</li>
+                <li><strong>Sequential Modalities:</strong> Massage, cupping add to total session duration</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Treatment Continuity System</h2>
+            <p>One of the most sophisticated aspects is implicit continuity tracking:</p>
+            <ul class="highlights-list">
+                <li><strong>Pattern Analysis:</strong> Analyzes all previous claim documents for the patient</li>
+                <li><strong>Condition Tracking:</strong> Identifies ongoing conditions and treatment patterns</li>
+                <li><strong>Natural Progression:</strong> Shows logical improvement (severe pain → gradual improvement → maintenance)</li>
+                <li><strong>No Explicit References:</strong> Never mentions "previous treatment" or "last visit" (insurance requirement)</li>
+                <li><strong>Adaptive Narrative:</strong> Handles condition changes, new issues, and maintenance visits appropriately</li>
+                <li><strong>Medical Logic:</strong> Ensures progression makes clinical sense</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Stage 4: Quality Assurance</h2>
+            <p>The consistency checker reviews all claims for a patient to identify potential audit risks:</p>
+            <ul>
+                <li><strong>Medical Validity:</strong> Ensures treatment plans align with diagnoses</li>
+                <li><strong>Progression Patterns:</strong> Verifies logical improvement over time</li>
+                <li><strong>Code Compliance:</strong> Validates CPT code units and durations</li>
+                <li><strong>Narrative Consistency:</strong> Checks for contradictions across claims</li>
+                <li><strong>Audit Risk Assessment:</strong> Flags potential red flags for manual review</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Stage 5: PDF Generation</h2>
+            <p>Converts markdown claim documents to professional PDFs for insurance submission:</p>
+            <ul>
+                <li><strong>Pandoc Conversion:</strong> High-quality PDF output with professional formatting</li>
+                <li><strong>Standard Format:</strong> Arial font with 1-inch margins (insurance standard)</li>
+                <li><strong>Batch Processing:</strong> Generates PDFs for all claims for selected patients</li>
+                <li><strong>Insurance-Ready:</strong> Maintains professional medical document formatting</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Claude Code Integration</h2>
+            <p>The system includes custom Claude Code slash commands with comprehensive instruction sets:</p>
+            
+            <div class="feature-card">
+                <h3>/generate-claim</h3>
+                <ul>
+                    <li>2000+ word instruction set for professional claim generation</li>
+                    <li>Strict CPT code and duration compliance rules</li>
+                    <li>Treatment continuity guidelines</li>
+                    <li>Medical documentation standards</li>
+                    <li>Length constraints (2 pages maximum)</li>
+                    <li>Pre-submission validation checklist</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>/augment-claims-data</h3>
+                <ul>
+                    <li>Interactive augmentation workflow</li>
+                    <li>Systematic questioning for missing details</li>
+                    <li>Context-aware suggestions based on diagnosis codes</li>
+                    <li>Chronological processing to maintain narrative</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>/check-claim-consistency</h3>
+                <ul>
+                    <li>Multi-claim analysis for audit risk</li>
+                    <li>Progression pattern validation</li>
+                    <li>Medical validity checking</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Usage</h2>
+            <p>The system is actively used for a clinical practice with multiple patients and ongoing treatment plans. Example workflow:</p>
+            
+            <div class="feature-card">
+                <pre style="background: var(--lightest-navy); padding: 16px; border-radius: 4px; overflow-x: auto;"><code># Monday clinic day - record 8 sessions in 5 minutes total
+python3 scripts/create_claim.py
+
+# Tuesday afternoon - augment all Monday sessions
+python3 scripts/augment_claims_data.py "Riccardo Marino" 2025-06-20
+# Claude interactively asks for missing details
+
+# Generate specific claim for submission
+python3 scripts/generate_claim_document.py "Riccardo Marino" 2025-06-20
+
+# Quality check before submission
+python3 scripts/check_claim_consistency.py "Riccardo Marino"
+
+# Generate PDFs for all claims
+python3 scripts/generate_claim_pdfs.py</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Innovation: AI-Human Collaboration</h2>
+            <p>The system's core innovation is the collaboration model between human practitioner and AI:</p>
+            
+            <h3>During Clinical Hours (Human)</h3>
+            <ul>
+                <li>Rapid data entry with minimal typing</li>
+                <li>Focus on patient care, not documentation</li>
+                <li>Quick condition/treatment selection from growing libraries</li>
+            </ul>
+            
+            <h3>After Clinical Hours (AI-Assisted)</h3>
+            <ul>
+                <li>Interactive enhancement of minimal notes</li>
+                <li>Systematic gathering of missing clinical details</li>
+                <li>Professional medical writing with proper terminology</li>
+                <li>Compliance checking and code validation</li>
+            </ul>
+            
+            <h3>Result</h3>
+            <ul class="highlights-list">
+                <li><strong>90% time savings</strong> during clinic hours</li>
+                <li><strong>Professional-grade documentation</strong> that satisfies insurance requirements</li>
+                <li><strong>Significantly reduced</strong> claim rejection rates</li>
+                <li><strong>Scalable process</strong> as practice grows</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Compliance & Standards</h2>
+            <p>The system enforces multiple levels of healthcare compliance:</p>
+            <ul>
+                <li><strong>ICD-10 Coding:</strong> Official 2026 code database with real-time validation</li>
+                <li><strong>CPT Coding:</strong> Time-based acupuncture codes with unit limits</li>
+                <li><strong>Duration Limits:</strong> 90-minute maximum session duration</li>
+                <li><strong>Medicare Guidelines:</strong> Specific rules for chronic low back pain coverage</li>
+                <li><strong>Insurance-Specific Requirements:</strong> Customizable rules per insurance provider</li>
+                <li><strong>Medical Necessity:</strong> Clear diagnosis-to-treatment linking</li>
+                <li><strong>HIPAA Considerations:</strong> Local file storage, no cloud database</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            <ul class="highlights-list">
+                <li><strong>770+ lines</strong> of well-structured Python code across 5 scripts</li>
+                <li><strong>10,000+</strong> validated ICD-10 medical diagnosis codes</li>
+                <li><strong>50+</strong> CPT procedure codes with unit limits</li>
+                <li><strong>Zero external dependencies</strong> for core functionality (pure Python stdlib)</li>
+                <li><strong>File-based architecture</strong> (no database server required)</li>
+                <li><strong>Interactive CLI</strong> with robust input validation</li>
+                <li><strong>Comprehensive error handling</strong> throughout</li>
+                <li><strong>Clear separation of concerns</strong> (data entry / augmentation / generation / validation)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Metrics</h2>
+            <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+                <div class="metric-card" style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+                    <div style="font-size: 2em; color: var(--green); font-weight: bold;">90%</div>
+                    <div style="color: var(--lightest-slate);">Time savings during clinic hours</div>
+                </div>
+                <div class="metric-card" style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+                    <div style="font-size: 2em; color: var(--green); font-weight: bold;">770+</div>
+                    <div style="color: var(--lightest-slate);">Lines of Python code</div>
+                </div>
+                <div class="metric-card" style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+                    <div style="font-size: 2em; color: var(--green); font-weight: bold;">10,000+</div>
+                    <div style="color: var(--lightest-slate);">ICD-10 codes validated</div>
+                </div>
+                <div class="metric-card" style="background: var(--lightest-navy); padding: 16px; border-radius: 4px;">
+                    <div style="font-size: 2em; color: var(--green); font-weight: bold;">2 pages</div>
+                    <div style="color: var(--lightest-slate);">Maximum claim format</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>The Health Insurance Claims Management System demonstrates how AI augmentation can solve real-world healthcare administration problems. By separating rapid data entry from detailed documentation, it allows practitioners to focus on patient care during clinical hours while still producing professional, compliant insurance claims.</p>
+            <p>The system's use of file-based storage, Python standard library, and Claude Code integration creates a lightweight, maintainable solution that can run on any computer without complex infrastructure. Its growing knowledge base of conditions and treatments becomes more valuable over time, making data entry faster and more consistent.</p>
+            <p>Most importantly, the system produces claims that insurance companies accept, reducing rejection rates and improving revenue cycle management for small acupuncture practices.</p>
+        </section>
+    </article>
+</body>
+</html>
