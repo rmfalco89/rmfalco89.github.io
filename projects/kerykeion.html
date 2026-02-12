@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerykeion - Cryptocurrency Astro-Trading Analysis - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>Kerykeion</h1>
+            <p class="subtitle">Cryptocurrency Astro-Trading Analysis</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/kerykeion" target="_blank" class="status-badge github-link">View on GitHub</a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">pyswisseph</span>
+                    <span class="tech-tag">Machine Learning</span>
+                    <span class="tech-tag">Financial Astrology</span>
+                    <span class="tech-tag">Time-Series Analysis</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>Kerykeion is a customized fork of the open-source Python astrology library, extended with feature extraction capabilities for <strong>cryptocurrency market analysis through astrological aspects</strong>. This project explores the intersection of financial markets and celestial mechanics by correlating planetary positions with cryptocurrency price movements.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Foundation</h2>
+            
+            <h3>Base Library (kerykeion)</h3>
+            <p>The project builds on the <a href="https://github.com/g-battaglia/kerykeion" target="_blank">kerykeion library</a> by Giacomo Battaglia, which provides:</p>
+            
+            <ul>
+                <li><strong>Planet & House Calculations:</strong> Compute positions of celestial bodies and astrological houses</li>
+                <li><strong>Aspect Detection:</strong> Identify angular relationships between planets (conjunctions, oppositions, trines, squares, etc.)</li>
+                <li><strong>Chart Generation:</strong> Create SVG visualizations of natal, composite, and transit charts</li>
+                <li><strong>Swiss Ephemeris Integration:</strong> Uses the industry-standard pyswisseph library for astronomical calculations</li>
+            </ul>
+            
+            <h3>Custom Extensions</h3>
+            <p>Riccardo added three key components to enable systematic analysis:</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>1. FeatureExtractor.py</h2>
+            <p>A modular feature extraction framework that transforms astrological data into machine-learning-ready features:</p>
+            
+            <div class="code-block">
+                <pre><code>class FeatureExtractor:
+    def __init__(self, extractors=None, obfuscate_features=False):
+        self.extractors = extractors or [Extractors.PLAIN]
+        self.obfuscate = obfuscate_features</code></pre>
+            </div>
+            
+            <h3>Extraction Modes</h3>
+            
+            <div class="feature-card">
+                <h3>PLAIN Extractor</h3>
+                <ul>
+                    <li>Extracts raw astrological attributes: planet positions (absolute degrees), retrograde status, house placement, zodiac sign</li>
+                    <li>Flattens nested birth chart data into a single feature vector</li>
+                    <li>Example features: <code>pf_BTC_Sun_abs_pos</code>, <code>pf_BTC_Moon_retrograde</code>, <code>pf_BTC_Mars_house</code></li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>LUNAR Extractor</h3>
+                <ul>
+                    <li>Captures lunar cycle information: moon phase, sun phase, degrees between sun and moon</li>
+                    <li>Critical for timing-based trading strategies (many traders track lunar cycles)</li>
+                    <li>Features: <code>lunar_BTC_moon_phase</code>, <code>lunar_BTC_degrees_between_s_m</code></li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>ASPECTS Extractor</h3>
+                <ul>
+                    <li>Compares two charts (e.g., coin birth chart vs. current date) to detect significant angular relationships</li>
+                    <li>Configurable aspects: Conjunction (0°), Semisextile (30°), Square (90°), Trine (120°), Opposition (180°)</li>
+                    <li>Binary features indicating whether aspects are within tolerance (default: ±3°)</li>
+                    <li>Example: <code>BTC-Sun-NOW-Mars-Trine</code> = 1 if BTC's natal Sun is trine to current transiting Mars</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>NORMALIZER</h3>
+                <ul>
+                    <li>Scales features to [0, 1] range for ML compatibility</li>
+                    <li>Degrees → divide by 360</li>
+                    <li>House numbers → divide by 12</li>
+                    <li>Lunar phases → divide by 28</li>
+                </ul>
+            </div>
+            
+            <h3>Configuration</h3>
+            <div class="code-block">
+                <pre><code>keep_only_features = ["name", "abs_pos", "retrograde", "house", "sign"]
+ASPECT_TOLERANCE = 3  # degrees
+alignment_gap = 1.0
+round_floats_decimals = 5</code></pre>
+            </div>
+            
+            <p>The extractor supports <strong>feature obfuscation</strong> for blind testing—hashing feature names to prevent bias during model evaluation.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>2. featurize_coin_history.py</h2>
+            <p>A batch processing script that generates time-series datasets correlating astrological features with cryptocurrency price data.</p>
+            
+            <h3>Workflow</h3>
+            
+            <div class="feature-card">
+                <h3>1. Define Coin Birth Charts</h3>
+                <div class="code-block">
+                    <pre><code>coin_bc = {
+    "BTC": kr.KrInstance("BTC", 2009, 1, 9, 18, 15,
+                         "London", nat="GB", lon=-0.12574, lat=51.50853),
+    "ETH": kr.KrInstance("ETH", 2014, 1, 9, 18, 15,
+                         "London", nat="GB", lon=-0.12574, lat=51.50853)
+}</code></pre>
+                </div>
+                <ul>
+                    <li>Bitcoin's "birth" corresponds to the genesis block timestamp (Jan 9, 2009)</li>
+                    <li>Ethereum's launch date (2014)</li>
+                    <li>Uses London as reference location (major financial center)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Load Historical Price Data</h3>
+                <ul>
+                    <li>Supports multiple data sources: Messari, Kaggle</li>
+                    <li>Extracts: daily low, volume, close price, price variation</li>
+                    <li>Example path: <code>/Users/rmarino/coins_historical_data/messari/coin_BTC.csv</code></li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Iterate Through History</h3>
+                <div class="code-block">
+                    <pre><code>while current_day <= date_to:
+    chart_now = kr.KrInstance(year=current_day.year, 
+                              month=current_day.month, 
+                              day=current_day.day,
+                              hours=9, minuts=15, 
+                              city='London')
+    day_data.update(fe.extract_features(coin_bc[coin], chart_now))</code></pre>
+                </div>
+                <ul>
+                    <li>For each day: generate a "now" chart (9:15 AM London time—market open)</li>
+                    <li>Extract features comparing the coin's natal chart vs. current transits</li>
+                    <li>Merge with price/volume data for that day</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Export Dataset</h3>
+                <ul>
+                    <li>Outputs TSV/CSV files: <code>BTC_data.csv</code>, <code>ETH_data.csv</code></li>
+                    <li>Each row: date, price metrics, ~50-200 astrological features (depending on extractors)</li>
+                    <li>Ready for statistical analysis, ML training, or backtesting</li>
+                </ul>
+            </div>
+            
+            <h3>Example Output Structure</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>date</th>
+                        <th>lowest_price</th>
+                        <th>volume</th>
+                        <th>price_variation</th>
+                        <th>pf_BTC_Sun_abs_pos</th>
+                        <th>BTC-Sun-NOW-Mars-Trine</th>
+                        <th>lunar_BTC_moon_phase</th>
+                        <th>...</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2020-01-01</td>
+                        <td>7195.0</td>
+                        <td>18.4B</td>
+                        <td>-50.2</td>
+                        <td>77.598</td>
+                        <td>1</td>
+                        <td>15</td>
+                        <td>...</td>
+                    </tr>
+                    <tr>
+                        <td>2020-01-02</td>
+                        <td>6850.0</td>
+                        <td>16.2B</td>
+                        <td>-345.0</td>
+                        <td>77.598</td>
+                        <td>0</td>
+                        <td>16</td>
+                        <td>...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture & Design Decisions</h2>
+            
+            <h3>Modular Extraction Pattern</h3>
+            <p>The <code>Extractors</code> enum allows flexible feature set composition. Researchers can:</p>
+            <ul>
+                <li>Test plain planetary positions alone</li>
+                <li>Add lunar cycles for timing strategies</li>
+                <li>Include aspects for relationship-based signals</li>
+                <li>Normalize for ML algorithms or leave raw for statistical tests</li>
+            </ul>
+            
+            <h3>Location Standardization</h3>
+            <p>Using London (51.5°N, 0.12°W) as the reference point ensures:</p>
+            <ul>
+                <li>Consistency across all calculations</li>
+                <li>Alignment with major financial market hours (UK trading session)</li>
+                <li>Reproducibility (no ambiguity in geographic coordinates)</li>
+            </ul>
+            
+            <h3>Aspect Selection</h3>
+            <p>The script comments out minor aspects (vigintile, septile, quintile) to focus on <strong>major aspects</strong> traditionally emphasized in financial astrology:</p>
+            <ul>
+                <li><strong>Conjunction</strong> (0°): Amplification, new cycles</li>
+                <li><strong>Trine</strong> (120°): Harmony, support</li>
+                <li><strong>Square</strong> (90°): Tension, turning points</li>
+                <li><strong>Opposition</strong> (180°): Polarization, peaks/troughs</li>
+            </ul>
+            <p>This reduces noise and feature count for initial analysis.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Use Cases</h2>
+            
+            <div class="feature-card">
+                <h3>1. Exploratory Analysis</h3>
+                <ul>
+                    <li>Identify statistical correlations between planetary transits and price movements</li>
+                    <li>Example: "Do Bitcoin rallies correlate with Jupiter-Venus trines?"</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Backtesting Trading Strategies</h3>
+                <ul>
+                    <li>Generate buy/sell signals based on aspect patterns</li>
+                    <li>Evaluate performance over historical data</li>
+                    <li>Compare against baseline (buy-and-hold, moving averages)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Machine Learning</h3>
+                <ul>
+                    <li>Train classifiers to predict: price direction (up/down), volatility spikes, trend reversals</li>
+                    <li>Input: astrological features; Output: price change over next N days</li>
+                    <li>Algorithms: Random Forest, XGBoost, Neural Networks</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Academic Research</h3>
+                <ul>
+                    <li>Publish findings on the (in)validity of astro-trading</li>
+                    <li>Contribute to behavioral finance literature</li>
+                    <li>Explore why certain patterns might appear (self-fulfilling prophecy, crowd psychology)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Stack</h2>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Technology</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Core Library</td>
+                        <td>Python 3.6+</td>
+                        <td>Language runtime</td>
+                    </tr>
+                    <tr>
+                        <td>Astronomy Engine</td>
+                        <td>pyswisseph</td>
+                        <td>High-precision ephemeris data</td>
+                    </tr>
+                    <tr>
+                        <td>Date/Time Handling</td>
+                        <td>pytz</td>
+                        <td>Timezone-aware calculations</td>
+                    </tr>
+                    <tr>
+                        <td>Data Serialization</td>
+                        <td>jsonpickle</td>
+                        <td>Object persistence</td>
+                    </tr>
+                    <tr>
+                        <td>CSV Processing</td>
+                        <td>csv (stdlib)</td>
+                        <td>Historical data I/O</td>
+                    </tr>
+                    <tr>
+                        <td>Charting</td>
+                        <td>SVG generation</td>
+                        <td>Visual birth chart output</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Dependencies</h3>
+            <div class="code-block">
+                <pre><code>install_requires=['pyswisseph', 'pytz', 'jsonpickle']</code></pre>
+            </div>
+            
+            <h3>pyswisseph</h3>
+            <p>The Swiss Ephemeris is a gold-standard astronomical library used by professional astrologers. It provides:</p>
+            <ul>
+                <li>Planetary positions accurate to within 1 arcsecond</li>
+                <li>Data spanning 10,000 years (6000 BCE to 4000 CE)</li>
+                <li>Support for asteroids, lunar nodes, hypothetical planets</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Limitations & Considerations</h2>
+            
+            <div class="feature-card warning">
+                <h3>Scientific Skepticism</h3>
+                <p>Astrology lacks empirical support in mainstream science. This project should be viewed as:</p>
+                <ul>
+                    <li>An <strong>exploratory data analysis</strong> exercise</li>
+                    <li>A test of pattern recognition in financial markets</li>
+                    <li><strong>Not</strong> a reliable trading system without rigorous validation</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card warning">
+                <h3>Overfitting Risk</h3>
+                <p>With hundreds of astrological features, ML models can easily overfit:</p>
+                <ul>
+                    <li>Use train/validation/test splits</li>
+                    <li>Apply cross-validation</li>
+                    <li>Test on out-of-sample data (future dates)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card warning">
+                <h3>Survivorship Bias</h3>
+                <p>Only analyzing surviving coins (BTC, ETH) ignores thousands of failed cryptocurrencies. Results may not generalize.</p>
+            </div>
+            
+            <div class="feature-card warning">
+                <h3>Data Quality</h3>
+                <p>Historical price data varies by exchange and time period. Ensure:</p>
+                <ul>
+                    <li>Consistent data sources</li>
+                    <li>Handling of missing values (weekends, exchange downtime)</li>
+                    <li>Adjustment for splits/forks (e.g., Bitcoin Cash)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Potential Enhancements</h2>
+            
+            <ul>
+                <li><strong>More Coins:</strong> Extend to top 20 cryptocurrencies, stablecoins, DeFi tokens</li>
+                <li><strong>Intraday Features:</strong> Analyze hourly/minute-level transits for day trading</li>
+                <li><strong>Event Detection:</strong> Flag major aspects (e.g., Saturn return, eclipse season) as binary events</li>
+                <li><strong>Sentiment Integration:</strong> Combine with social media sentiment, on-chain metrics, order book data</li>
+                <li><strong>Causality Testing:</strong> Use Granger causality to check if aspects "predict" prices or just correlate</li>
+                <li><strong>Chart Patterns:</strong> Detect grand trines, T-squares, stelliums automatically</li>
+                <li><strong>Heliocentric Charts:</strong> Compare geocentric (Earth-centered) vs. heliocentric (Sun-centered) perspectives</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Quality</h2>
+            
+            <h3>Strengths</h3>
+            <ul>
+                <li><strong>Modular Design:</strong> Clear separation between base library, extraction logic, and batch processing</li>
+                <li><strong>Configurable:</strong> Easy to adjust aspects, tolerances, extractors without code changes</li>
+                <li><strong>Documented:</strong> Inline comments explain settings and assumptions</li>
+                <li><strong>Type Hints:</strong> OrderedDict usage ensures feature order consistency</li>
+            </ul>
+            
+            <h3>Areas for Improvement</h3>
+            <ul>
+                <li>Add unit tests for feature extraction logic</li>
+                <li>Implement CLI argument parsing (replace hardcoded settings)</li>
+                <li>Validate input data (check for missing columns, date gaps)</li>
+                <li>Add logging to CSV output for debugging failed extractions</li>
+                <li>Parameterize output paths (currently hardcoded to <code>/Users/rmarino/...</code>)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Example Usage</h2>
+            
+            <div class="code-block">
+                <pre><code>from FeatureExtractor import FeatureExtractor, Extractors
+import kerykeion.astrocore as kr
+
+# Define birth chart and current moment
+btc_birth = kr.KrInstance("BTC", 2009, 1, 9, 18, 15, "London")
+now = kr.KrInstance("NOW", 2024, 6, 15, 9, 15, "London")
+
+# Extract features
+fe = FeatureExtractor(extractors=[
+    Extractors.PLAIN,
+    Extractors.LUNAR,
+    Extractors.ASPECTS
+])
+features = fe.extract_features(btc_birth, now)
+
+print(features)
+# {
+#   'pf_BTC_Sun_abs_pos': 77.598,
+#   'pf_BTC_Moon_retrograde': 0,
+#   'lunar_BTC_moon_phase': 15,
+#   'BTC-Sun-NOW-Mars-Trine': 1,
+#   ...
+# }</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>This project represents a unique fusion of <strong>astronomy, astrology, finance, and data science</strong>. While astrology remains controversial, the rigorous computational approach demonstrates:</p>
+            
+            <ul>
+                <li>How to systematically test unconventional hypotheses</li>
+                <li>The value of domain-specific feature engineering</li>
+                <li>The challenge of separating signal from noise in complex time-series data</li>
+            </ul>
+            
+            <p>Whether you're a skeptic seeking to debunk astro-trading or a curious researcher exploring edge cases, this codebase provides a solid foundation for quantitative analysis of celestial-financial correlations.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Repository</h2>
+            <ul>
+                <li><strong>GitHub:</strong> <a href="https://github.com/rmfalco89/kerykeion" target="_blank">rmfalco89/kerykeion</a></li>
+                <li><strong>Base Library:</strong> <a href="https://github.com/g-battaglia/kerykeion" target="_blank">g-battaglia/kerykeion</a></li>
+                <li><strong>License:</strong> GNU General Public License (GPL)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section disclaimer">
+            <p><em><strong>Note:</strong> This project is for educational and research purposes. Cryptocurrency trading carries significant risk. Past correlations do not guarantee future performance.</em></p>
+        </section>
+    </article>
+</body>
+</html>
