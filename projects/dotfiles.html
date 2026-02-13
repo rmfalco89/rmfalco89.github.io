@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dotfiles - Automated macOS Development Environment - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>dotfiles</h1>
+            <p class="subtitle">Automated macOS Development Environment</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/dotfiles" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Zsh</span>
+                    <span class="tech-tag">Shell Script</span>
+                    <span class="tech-tag">Git</span>
+                    <span class="tech-tag">Homebrew</span>
+                    <span class="tech-tag">Vim</span>
+                    <span class="tech-tag">Hammerspoon</span>
+                    <span class="tech-tag">VS Code</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Setting up a new development machine is tedious and error-prone. Installing tools, configuring editors, copying dotfiles, setting up shell environments — it can take hours or even days to replicate a productive environment.</p>
+            
+            <p>Common pain points:</p>
+            <ul>
+                <li>Remembering which tools to install</li>
+                <li>Manually copying configuration files</li>
+                <li>Inconsistent environments across machines</li>
+                <li>Lost productivity during onboarding</li>
+                <li>Forgetting crucial optimizations</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p>A comprehensive, one-command setup system that transforms a fresh Mac into a fully-configured development powerhouse:</p>
+            
+            <div class="code-block">
+                <pre>
+curl -sSL https://raw.githubusercontent.com/rmfalco89/dotfiles/main/setup.zsh | zsh
+                </pre>
+            </div>
+            
+            <p>Run this on a brand new Mac, walk away for coffee, and return to a complete development environment with:</p>
+            <ul>
+                <li>Homebrew package manager</li>
+                <li>Python, Docker, Git configured</li>
+                <li>VS Code with 60+ extensions</li>
+                <li>Optimized shell (zsh) with custom functions</li>
+                <li>Vim, Sublime Text, Hammerspoon</li>
+                <li>40+ Git aliases and workflows</li>
+                <li>macOS window management automation</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture & Design</h2>
+            
+            <div class="feature-card">
+                <h3>Modular Installation System</h3>
+                <p>The <code>setup.zsh</code> script supports three modes:</p>
+                
+                <div class="code-block">
+                    <pre>
+./setup.zsh complete    # Full dev environment (20+ tools)
+./setup.zsh essentials  # Homebrew + Python only
+./setup.zsh brew vim    # Pick specific components
+                    </pre>
+                </div>
+                
+                <p>Each installation function is independent with dependency checking:</p>
+                <div class="code-block">
+                    <pre>
+install_antigen() {
+    require_command brew "Run 'install_brew' first" || return 1
+    # ... installation logic
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Idempotent Operations</h3>
+                <p>Run the script 100 times — same result. Every function checks if tools exist before installing:</p>
+                
+                <div class="code-block">
+                    <pre>
+if command -v brew >/dev/null 2>&1; then
+    echo "Homebrew already installed. Updating..."
+    brew update
+else
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL ...)"
+fi
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Cross-Platform Support</h3>
+                <p>Detects OS and adapts installation methods:</p>
+                
+                <div class="code-block">
+                    <pre>
+case "$(uname -s)" in
+    "Darwin")  install_hammerspoon ;;
+    "Linux")   install_docker_linux ;;
+    *)         echo "Unsupported OS" ;;
+esac
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Shell Configuration Excellence</h2>
+            
+            <div class="feature-card">
+                <h3>Performance Through Lazy Loading</h3>
+                <p>Shell startup improved from 2-3 seconds to 200-300ms (10x faster):</p>
+                
+                <div class="code-block">
+                    <pre>
+# Only load NVM when needed
+nvm() {
+    unset -f nvm
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm "$@"
+}
+
+# Same pattern for pyenv, gcloud, etc.
+                    </pre>
+                </div>
+                
+                <p>Tools load instantly on first use instead of slowing down every shell startup.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Smart Git Prompt Optimization</h3>
+                <p>Blacklist slow directories to prevent git status checks from freezing your prompt:</p>
+                
+                <div class="code-block">
+                    <pre>
+avoid_dirs=(
+    "/path/to/massive/monorepo"
+    "/var/folders/temp"
+)
+
+check_avoid_list() {
+    for dir in $avoid_dirs; do
+        [[ $PWD == $dir* ]] && return 0
+    done
+    return 1
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>History Configured Right</h3>
+                <p>10 million command history, shared across all terminals:</p>
+                
+                <div class="code-block">
+                    <pre>
+HISTSIZE=10000000
+SAVEHIST=10000000
+setopt APPEND_HISTORY       # Don't overwrite
+setopt INC_APPEND_HISTORY   # Write immediately
+setopt SHARE_HISTORY        # Share across sessions
+setopt HIST_SAVE_NO_DUPS    # Skip duplicates
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Custom Utility Functions</h3>
+                <p>Practical tools built into the shell:</p>
+                
+                <div class="code-block">
+                    <pre>
+# Join lines with delimiter
+glue() { paste -s -d "${1:-|}" - }
+
+# Get absolute path
+get_abs_filename() {
+    echo $(cd $(dirname $1) && pwd)/$(basename $1)
+}
+
+# Check if commit A contains commit B
+containsCommit() { 
+    git merge-base --is-ancestor $2 $1 && echo Yes || echo No
+}
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Git Workflow Superpowers</h2>
+            
+            <p>The <code>.gitconfig</code> defines 40+ aliases transforming git into a development power tool:</p>
+            
+            <div class="feature-card">
+                <h3>Navigation & Workflow</h3>
+                <div class="code-block">
+                    <pre>
+git go feature-branch   # Create or switch to branch
+git cnew my-feature     # Fetch latest, create branch, stash/unstash
+git pusher              # Push current branch to origin
+git rebaser             # Stash, fetch, rebase, unstash + audio alert
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Code Archaeology</h3>
+                <div class="code-block">
+                    <pre>
+git fc "function_name"  # Find commits by source code
+git fm "bug fix"        # Find commits by message
+git fmAll "critical"    # Search all branches
+git fb abc123           # Find branches containing commit
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Smart Shortcuts</h3>
+                <div class="code-block">
+                    <pre>
+git ca        # Add all + commit with editor
+git amend     # Add to last commit, reuse message
+git uncommit  # Undo last commit, keep changes
+git unstage   # Remove from staging
+git dm        # Delete merged branches
+git recover   # Recover lost commits via fsck
+                    </pre>
+                </div>
+            </div>
+            
+            <p class="highlight-text">Every alias saves 5-10 keystrokes. Multiply by thousands of daily git commands = hours saved.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Hammerspoon Window Management</h2>
+            
+            <p>Keyboard-driven window management with instant, zero-lag animations:</p>
+            
+            <div class="feature-card">
+                <h3>The Grid System</h3>
+                <p>Hotkeys for every screen position (halves, thirds, quarters):</p>
+                
+                <div class="code-block">
+                    <pre>
+mash = { 'option', 'ctrl', 'cmd' }
+
+-- Screen halves
+⌥⌃⌘ + Left/Right/Up/Down    # 50% splits
+
+-- Thirds
+⌥⌃⌘ + K    # Left 30%
+⌥⌃⌘ + L    # Left 70%
+⌥⌃⌘ + ;    # Right 70%
+
+-- Quarters
+⌥⌃⌘ + 1/2/3/4    # Top-left, top-right, etc.
+
+-- Multi-monitor
+⌥⌃⌘ + A/S/D     # Move between displays
+                    </pre>
+                </div>
+                
+                <p>Zero animation lag: <code>hs.window.animationDuration = 0</code></p>
+                <p class="highlight-text">Organize your workspace in milliseconds. No mouse. No dragging. Pure keyboard efficiency.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>VS Code Extension Stack</h2>
+            
+            <p>60+ carefully curated extensions for Python, Ruby, DevOps, and AI-assisted development:</p>
+            
+            <div class="feature-card">
+                <h3>Development Essentials</h3>
+                <ul>
+                    <li><strong>Python:</strong> Pylance type checking, Black formatter, debugpy, AREPL live scratchpad</li>
+                    <li><strong>Ruby & Rails:</strong> Shopify Ruby LSP, Sorbet type checker, ERB/Haml support</li>
+                    <li><strong>Swift:</strong> Swift LSP + LLDB debugging</li>
+                    <li><strong>Git:</strong> GitLens, GitHub Copilot, Git History</li>
+                    <li><strong>DevOps:</strong> Docker, Remote Containers</li>
+                    <li><strong>AI Assistants:</strong> Claude Code, Continue, GitHub Copilot Chat</li>
+                    <li><strong>Code Quality:</strong> Sourcery refactoring, Rainbow CSV, Code Spell Checker</li>
+                </ul>
+                
+                <p>Installation is automatic: <code>setup.zsh vscode_extensions</code> reads <code>vscode-extensions.txt</code> and installs every extension in one batch.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Vim Configuration</h2>
+            
+            <p>Balanced power-user features with sane defaults:</p>
+            
+            <div class="code-block">
+                <pre>
+" 4-space tabs, expand to spaces
+set tabstop=4 shiftwidth=4 expandtab
+
+" Performance & UX
+set ttyfast                  " Fast terminal
+set mouse=r                  " Mouse support
+set clipboard=unnamedplus    " OS clipboard
+
+" Centralized backups (not in project dirs!)
+set backupdir=~/.vim/backups
+set directory=~/.vim/swaps
+set undodir=~/.vim/undo
+
+" Visual aids
+set number cursorline        " Line numbers + highlight
+set hlsearch incsearch       " Smart search
+set scrolloff=3              " Keep 3 lines visible
+                </pre>
+            </div>
+            
+            <p>Custom commands: <code>,ss</code> strips trailing whitespace, <code>,W</code> saves as root with sudo.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Maintenance & Updates</h2>
+            
+            <p>The <code>update_dotfiles.zsh</code> script reverses the flow — backup your current config back to the repo:</p>
+            
+            <div class="code-block">
+                <pre>
+./update_dotfiles.zsh
+
+# Backs up:
+# - .zshrc, .vimrc, .gitconfig
+# - VS Code extensions (exported to txt)
+# - oh-my-zsh (compressed to tar.gz)
+# - Hammerspoon config
+
+# Then commit and push to keep configs in sync across machines
+                </pre>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Safe Defaults</h3>
+                <ul>
+                    <li>Existing <code>.zshrc</code> backed up before overwrite (timestamped)</li>
+                    <li>Symlinks checked before creation</li>
+                    <li>Non-destructive updates</li>
+                    <li>Version checks prevent reinstalls</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Use Cases</h2>
+            
+            <div class="feature-card">
+                <h3>New Mac Setup</h3>
+                <div class="code-block">
+                    <pre>
+# Fresh MacBook Pro, right out of the box
+curl -sSL https://raw.githubusercontent.com/rmfalco89/dotfiles/main/setup.zsh | zsh
+
+# Go make coffee. Come back to fully configured development machine.
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Onboarding Teammates</h3>
+                <div class="code-block">
+                    <pre>
+# Clone your fork, customize setup array
+git clone git@github.com:yourteam/dotfiles.git
+cd dotfiles
+./setup.zsh complete
+
+# Everyone gets the same environment
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Sync Across Machines</h3>
+                <div class="code-block">
+                    <pre>
+# Machine 1: update configs
+cd ~/projects/dotfiles
+./update_dotfiles.zsh
+git commit -m "Updated VS Code extensions"
+git push
+
+# Machine 2: pull and re-run
+git pull
+./setup.zsh vscode_extensions  # Only update what changed
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            
+            <div class="feature-card">
+                <h3>Dependency Management</h3>
+                <p>Functions check prerequisites before running with clear error messages:</p>
+                <div class="code-block">
+                    <pre>
+require_command() {
+    local cmd="$1"
+    local install_hint="$2"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Error: '$cmd' not found."
+        [[ -n "$install_hint" ]] && echo "Hint: $install_hint"
+        return 1
+    fi
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Graceful Degradation</h3>
+                <p>Platform-specific features are silently skipped on unsupported systems:</p>
+                <div class="code-block">
+                    <pre>
+case "$os_name" in
+    "Darwin") install_hammerspoon ;;
+    "Linux") echo "Hammerspoon is macOS-only, skipping" ;;
+    *) echo "Unsupported OS: $os_name" ;;
+esac
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Performance Metrics</h2>
+            
+            <ul class="highlights-list">
+                <li><strong>Shell startup:</strong> 200-300ms (10x faster than without lazy loading)</li>
+                <li><strong>Full installation:</strong> 20-30 minutes on fresh Mac</li>
+                <li><strong>Partial updates:</strong> ~5 minutes when tools already exist</li>
+                <li><strong>Repository size:</strong> ~33 MB (includes binaries)</li>
+                <li><strong>Installed tools:</strong> 5-10 GB depending on selections</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>What's Included</h2>
+            
+            <div class="feature-card">
+                <h3>Configuration Files</h3>
+                <ul>
+                    <li><code>.zshrc</code> - Optimized shell with lazy loading, 10M command history</li>
+                    <li><code>.gitconfig</code> - 40+ aliases and workflow optimizations</li>
+                    <li><code>.vimrc</code> - Sensible vim defaults with customizations</li>
+                    <li><code>.hammerspoon/init.lua</code> - Window management automation</li>
+                    <li><code>vscode-extensions.txt</code> - Curated extension list</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Installation Scripts</h3>
+                <ul>
+                    <li><code>setup.zsh</code> - Modular installation orchestrator (~850 lines)</li>
+                    <li><code>update_dotfiles.zsh</code> - Config backup and sync utility</li>
+                    <li>AppleScripts for macOS automation</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Binary Packages</h3>
+                <ul>
+                    <li><code>oh-my-zsh.tar.gz</code> - Pre-configured Oh-My-Zsh framework</li>
+                    <li><code>irisbinary.tgz</code> - Iris blue light filter</li>
+                    <li><code>entangle-131.dmg</code> - USB tethering tool</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Philosophy & Design Principles</h2>
+            
+            <p class="highlight-text">Developer time is expensive. Machine time is cheap.</p>
+            
+            <p>This repository embodies the principle that investing 2 hours in automation saves 30 minutes on every new machine. After 4 machines, you're ahead. After 10, you've saved days.</p>
+            
+            <div class="feature-card">
+                <h3>Dotfiles as Infrastructure as Code</h3>
+                <p>Development environments should be:</p>
+                <ul>
+                    <li><strong>Version controlled:</strong> Git tracks every change</li>
+                    <li><strong>Reproducible:</strong> Idempotent operations</li>
+                    <li><strong>Documented:</strong> Self-explanatory scripts</li>
+                    <li><strong>Shareable:</strong> Teams benefit from standardization</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Learning Opportunities</h2>
+            
+            <div class="feature-card">
+                <h3>Shell Scripting Patterns</h3>
+                <ul>
+                    <li><strong>Modular function design</strong> with clear responsibilities</li>
+                    <li><strong>Dependency checking</strong> with helpful error messages</li>
+                    <li><strong>Idempotent operations</strong> for safe re-runs</li>
+                    <li><strong>Cross-platform compatibility</strong> via OS detection</li>
+                    <li><strong>Lazy loading</strong> for performance optimization</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Development Environment Best Practices</h3>
+                <ul>
+                    <li><strong>Centralized backups</strong> (not in project directories)</li>
+                    <li><strong>Shared history</strong> across terminal sessions</li>
+                    <li><strong>Git workflow automation</strong> to reduce friction</li>
+                    <li><strong>Tool version management</strong> (pyenv, nvm)</li>
+                    <li><strong>Keyboard-driven workflows</strong> for efficiency</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Project Stats</h2>
+            
+            <ul class="highlights-list">
+                <li><strong>~850 lines</strong> of shell script in setup.zsh</li>
+                <li><strong>20+ modular</strong> installation functions</li>
+                <li><strong>60+ VS Code</strong> extensions tracked</li>
+                <li><strong>40+ Git aliases</strong> for workflow optimization</li>
+                <li><strong>Zero manual steps</strong> for fresh machine setup</li>
+                <li><strong>Cross-platform support</strong> (macOS + Linux)</li>
+                <li><strong>10x shell startup</strong> speed improvement</li>
+            </ul>
+        </section>
+        
+        <footer class="project-footer">
+            <p>The dotfiles repository demonstrates how thoughtful automation can transform the tedious process of machine setup into a single command. It's infrastructure as code for personal development environments — version controlled, reproducible, and shareable. Clone it, customize it, make it yours.</p>
+        </footer>
+    </article>
+</body>
+</html>
