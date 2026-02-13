@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-Code Print Recovery Tool - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>gcode-extruder-offset</h1>
+            <p class="subtitle">Resume Failed 3D Prints from Any Layer</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/gcode-extruder-offset" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">G-code parsing</span>
+                    <span class="tech-tag">Regex</span>
+                    <span class="tech-tag">3D Printing</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Anyone who's done multi-hour 3D prints knows the pain: you're 8 hours into a 12-hour print, and something goes wrong. Power outage. Filament tangle. Nozzle clog. The print stops, and your options are:</p>
+            
+            <ul>
+                <li>Start over from scratch (waste 8 hours of printing)</li>
+                <li>Try to manually resume (extremely difficult to get right)</li>
+            </ul>
+            
+            <p>This tool solves that problem by automatically generating recovery G-code that resumes the print from any layer.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Challenge</h2>
+            <p>Resuming a 3D print isn't as simple as just starting from a given layer. The G-code contains cumulative extruder position values (the <code>E</code> parameter), and those need to be adjusted. If you don't account for the filament already extruded, your printer will either:</p>
+            
+            <ul>
+                <li>Try to push way too much filament (if you start with the original E value)</li>
+                <li>Not extrude enough (if you reset to E0)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p>The script performs three critical operations:</p>
+            
+            <ol>
+                <li><strong>Find the extruder offset</strong> - Scans backwards from the target layer to find the last E value</li>
+                <li><strong>Determine Z-height</strong> - Captures the Z position of the layer you're resuming from</li>
+                <li><strong>Adjust all E values</strong> - Subtracts the offset from every subsequent extrusion command</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Deep Dive</h2>
+            
+            <div class="feature-card">
+                <h3>Smart Pattern Matching</h3>
+                <div class="code-block">
+                    <pre>
+l_pattern = r";LAYER:(\d+)"
+e_pattern = r"E(\d+(\.\d+)?)"
+z_pattern = r"Z(\d+(\.\d+)?)"
+                    </pre>
+                </div>
+                <p>The tool uses regex to parse G-code comments and movement commands, looking for:</p>
+                <ul>
+                    <li>Layer markers (<code>;LAYER:133</code>)</li>
+                    <li>Extrusion values (<code>E45.67</code>)</li>
+                    <li>Z-axis positions (<code>Z38.4</code>)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Efficient Buffering</h3>
+                <div class="code-block">
+                    <pre>
+lines_to_keep = 100
+last_n_lines = deque(maxlen=lines_to_keep)
+                    </pre>
+                </div>
+                <p>Uses a circular buffer to keep the last 100 lines in memory. This lets it "look back" to find the most recent E value before the target layer without loading the entire file.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Extruder Reset Handling</h3>
+                <div class="code-block">
+                    <pre>
+if e_offset != 0 and "G92 E0" in line:
+    print(f"Extruder reset detected at line {line_number}")
+    e_offset = 0  # Reset e_offset
+                    </pre>
+                </div>
+                <p>Smart detection of <code>G92 E0</code> commands (which reset the extruder position). Once detected, the offset is recalculated from that point forward.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Precision Math</h3>
+                <div class="code-block">
+                    <pre>
+offsetted = round(float(matches[0][0]) - e_offset, 5)
+                    </pre>
+                </div>
+                <p>All extrusion values are adjusted to 5 decimal places, maintaining the precision needed for accurate filament flow.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Usage</h2>
+            
+            <div class="feature-card">
+                <h3>Example Scenario</h3>
+                <p>You're printing a 211-layer model. It fails at layer 132. Here's what you do:</p>
+                
+                <p><strong>1. Run the script:</strong></p>
+                <div class="code-block">
+                    <pre>
+python e_offset.py -i original.gcode -l 133 -o recovery.gcode
+                    </pre>
+                </div>
+                
+                <p><strong>2. Manually prep the printer:</strong></p>
+                <ul>
+                    <li>Move the nozzle to a clear spot on the bed</li>
+                    <li>Heat everything up</li>
+                    <li>Manually set Z to 0 at the current layer height</li>
+                </ul>
+                
+                <p><strong>3. Load recovery.gcode</strong> - The script has already adjusted all E and Z values</p>
+                
+                <p><strong>4. Print from there</strong> - Resume without starting over</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>The Manual Part</h3>
+                <p>The tool includes clear instructions for the manual homing setup:</p>
+                
+                <div class="code-block">
+                    <pre>
+SET_KINEMATIC_POSITION z=0  ; Tell printer "you're at Z0"
+G0 Z39                       ; Lift above current layer
+G28 X Y                      ; Home X and Y only
+                    </pre>
+                </div>
+                
+                <p>This is necessary because you can't safely home Z when there's already a partially-printed model on the bed.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Design Decisions</h2>
+            
+            <div class="feature-card">
+                <h3>Why Not Fully Automated?</h3>
+                <p>The tool deliberately leaves manual homing as a user task. This is smart:</p>
+                <ul>
+                    <li><strong>Safety</strong> - Every printer and print is different. Manual control prevents crashes</li>
+                    <li><strong>Flexibility</strong> - Users can adapt to their specific situation</li>
+                    <li><strong>Simplicity</strong> - Automating homing would require printer-specific configs</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Single-Pass Processing</h3>
+                <p>The script processes the G-code in one pass, writing output as it goes. This means:</p>
+                <ul>
+                    <li>Memory efficient (can handle huge G-code files)</li>
+                    <li>Fast execution</li>
+                    <li>Simple logic flow</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Regex Over Parser</h3>
+                <p>Using regex instead of a full G-code parser is pragmatic:</p>
+                <ul>
+                    <li>G-code is simple and regular</li>
+                    <li>No external dependencies</li>
+                    <li>Fast pattern matching</li>
+                    <li>Easy to understand and modify</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Use Cases</h2>
+            
+            <ul>
+                <li><strong>Home Printing</strong> - Resume prints after power outages or mechanical failures</li>
+                <li><strong>Print Farms</strong> - Quickly recover from failed prints without wasting hours of printer time</li>
+                <li><strong>Prototyping</strong> - Test different layer settings by resuming prints with modified parameters mid-way through</li>
+                <li><strong>Material Changes</strong> - Resume prints after manually swapping filament colors or materials at specific layers</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Quality</h2>
+            
+            <div class="feature-card">
+                <h3>Strengths</h3>
+                <ul>
+                    <li>Clear variable names and logic flow</li>
+                    <li>Robust error handling with line number tracking</li>
+                    <li>Informative print statements for debugging</li>
+                    <li>Simple command-line interface</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Practical Choices</h3>
+                <ul>
+                    <li>No external dependencies beyond Python stdlib</li>
+                    <li>Single file for easy distribution</li>
+                    <li>Straightforward regex patterns</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Bottom Line</h2>
+            <p>This is exactly the kind of tool that makes 3D printing less frustrating. It doesn't try to be fancy—it solves one specific problem really well. When you've got a 10-hour print that failed at hour 8, this tool can save you hours of time and frustration.</p>
+            
+            <p>It's pragmatic, tested, and shows deep understanding of both G-code mechanics and real-world printing challenges.</p>
+        </section>
+    </article>
+</body>
+</html>
