@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruePeopleSearch Skip Tracer - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>TruePeopleSearch Skip Tracer</h1>
+            <p class="subtitle">Python Web Scraping & Browser Automation for Contact Discovery</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/truepplsearch" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python 3.11+</span>
+                    <span class="tech-tag">BeautifulSoup4</span>
+                    <span class="tech-tag">Pyppeteer</span>
+                    <span class="tech-tag">Poetry</span>
+                    <span class="tech-tag">Web Scraping</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>TruePeopleSearch Skip Tracer is a Python CLI tool that automates contact information lookup on TruePeopleSearch.com. It demonstrates advanced web scraping techniques, anti-bot bypass strategies, and flexible data processing workflows.</p>
+            <p>The tool was built to streamline the tedious process of manually searching for contact information — a common task in real estate, collections, and lead generation workflows.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Features</h2>
+            
+            <h3>1. Multiple Input Methods</h3>
+            <p>The tool supports three distinct workflows:</p>
+            
+            <div class="code-block">
+                <p><strong>Batch Processing from File:</strong></p>
+                <pre><code>poetry run python truepeoplesearch.py --file leads.txt</code></pre>
+            </div>
+            
+            <div class="code-block">
+                <p><strong>Command Line Direct Input:</strong></p>
+                <pre><code>poetry run python truepeoplesearch.py --leads "John Smith,Los Angeles,CA;Jane Doe,New York,NY"</code></pre>
+            </div>
+            
+            <div class="code-block">
+                <p><strong>Interactive Mode:</strong></p>
+                <pre><code>poetry run python truepeoplesearch.py --interactive</code></pre>
+            </div>
+            
+            <p>This flexibility makes it suitable for both one-off searches and large-scale batch operations.</p>
+            
+            <h3>2. Anti-Bot Detection Handling</h3>
+            <p>Modern websites employ sophisticated bot detection. This tool implements two strategies:</p>
+            
+            <p><strong>HTTP Request Mode:</strong></p>
+            <ul>
+                <li>Custom User-Agent rotation</li>
+                <li>Session initialization to acquire cookies</li>
+                <li>Realistic browser headers (Accept, Accept-Language, Sec-Fetch-*)</li>
+                <li>Rate limiting with configurable delays</li>
+                <li>Proxy configuration support</li>
+            </ul>
+            
+            <p><strong>Browser Automation Mode:</strong></p>
+            <div class="code-block">
+                <pre><code>poetry run python truepeoplesearch.py --browser --leads "Brandon Estuesta,Los Gatos,CA"</code></pre>
+            </div>
+            
+            <p>The browser mode uses Pyppeteer to:</p>
+            <ul>
+                <li>Launch a real Chrome instance</li>
+                <li>Bypass JavaScript-based bot checks</li>
+                <li>Handle CAPTCHA challenges (with manual intervention)</li>
+                <li>Execute dynamic content rendering</li>
+            </ul>
+            
+            <h3>3. Robust Data Extraction</h3>
+            <p>The scraper uses multiple extraction strategies to handle varying HTML structures:</p>
+            
+            <div class="code-block">
+                <p><strong>Flexible Selectors:</strong></p>
+                <pre><code>selectors = [
+    'div.person-card',
+    'div[class*="card"]', 
+    'div[class*="person"]',
+    'div[data-person]',
+    # ... fallbacks
+]</code></pre>
+            </div>
+            
+            <div class="code-block">
+                <p><strong>Multi-Pattern Regex Extraction:</strong></p>
+                <pre><code># Age extraction with multiple patterns
+age_patterns = [
+    r'age[:\s]*(\d+)',          # Age: 34
+    r'(\d+)\s+years?\s+old',    # 34 years old
+    r'\b(\d{1,2})\s*yo\b',      # 34 yo
+]</code></pre>
+            </div>
+            
+            <p>This approach ensures high extraction success rates even when site layouts change.</p>
+            
+            <h3>4. Structured Data Export</h3>
+            <p>Results are automatically saved in two formats:</p>
+            
+            <div class="code-block">
+                <p><strong>JSON (machine-readable):</strong></p>
+                <pre><code>{
+  "search_info": {
+    "first_name": "Brandon",
+    "last_name": "Estuesta",
+    "location": "Los Gatos, CA"
+  },
+  "people": [
+    {
+      "name": "Brandon Estuesta",
+      "age": "34",
+      "sex": "Male",
+      "addresses": ["123 Main St, Los Gatos, CA 95032"],
+      "phones": ["(408) 555-1234"],
+      "relatives": "Maria Estuesta, Carlos Estuesta"
+    }
+  ],
+  "timestamp": "2026-02-10T14:23:45"
+}</code></pre>
+            </div>
+            
+            <div class="code-block">
+                <p><strong>CSV (human-readable):</strong></p>
+                <pre><code>Search_Name,Search_Location,Found_Name,Age,Sex,Addresses,Phones,Relatives
+Brandon Estuesta,Los Gatos CA,Brandon Estuesta,34,Male,123 Main St..., (408) 555-1234,Maria Estuesta...</code></pre>
+            </div>
+            
+            <h3>5. Offline Testing Mode</h3>
+            <p>An often-overlooked feature in scrapers: the ability to test without hitting the live site.</p>
+            
+            <div class="code-block">
+                <pre><code>poetry run python truepeoplesearch.py --offline --leads "Test Person,Test City,CA"</code></pre>
+            </div>
+            
+            <p>The offline mode generates realistic mock data with:</p>
+            <ul>
+                <li>Gender-aware name assignments</li>
+                <li>Randomized ages, addresses, phone numbers</li>
+                <li>Realistic job titles</li>
+                <li>Proper formatting to match real results</li>
+            </ul>
+            
+            <p>This allows rapid development and testing of extraction logic without rate limits or bot detection.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture</h2>
+            
+            <h3>Session Management</h3>
+            <p>The tool maintains persistent sessions to mimic real browser behavior:</p>
+            
+            <div class="code-block">
+                <pre><code>def initialize_session(self):
+    response = self.session.get(self.base_url, timeout=10)
+    # Acquires cookies and establishes session state</code></pre>
+            </div>
+            
+            <h3>Error Handling</h3>
+            <p>Comprehensive error handling for common issues:</p>
+            <ul>
+                <li><strong>ProxyError:</strong> Detects and reports proxy misconfigurations</li>
+                <li><strong>403 Forbidden:</strong> Identifies bot detection blocks with actionable suggestions</li>
+                <li><strong>Timeout:</strong> Handles slow responses gracefully</li>
+                <li><strong>ConnectionError:</strong> DNS and network failure recovery</li>
+            </ul>
+            
+            <h3>Async Browser Automation</h3>
+            <p>The browser mode uses async/await for non-blocking operations:</p>
+            
+            <div class="code-block">
+                <pre><code>async def search_person_with_browser(self, first_name, last_name, location):
+    await self.page.goto(search_url, {'waitUntil': 'networkidle0'})
+    
+    # CAPTCHA detection
+    captcha_elements = await self.page.xpath('//div[contains(text(), "captcha")]')
+    if captcha_elements:
+        print("CAPTCHA detected! Solve manually and press Enter...")
+        input()
+    
+    content = await self.page.content()
+    return self.parse_search_results(content)</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Challenges Solved</h2>
+            
+            <h3>1. Dynamic HTML Structures</h3>
+            <p>Websites rarely have stable HTML. The tool uses:</p>
+            <ul>
+                <li>Multiple selector fallbacks</li>
+                <li>Pattern-based text extraction</li>
+                <li>Context-aware field identification</li>
+            </ul>
+            
+            <h3>2. Rate Limiting</h3>
+            <p>Built-in delays prevent IP bans:</p>
+            <div class="code-block">
+                <pre><code>time.sleep(args.delay)  # Configurable delay between requests</code></pre>
+            </div>
+            
+            <h3>3. Data Normalization</h3>
+            <p>Phone numbers, addresses, and names appear in countless formats. The tool:</p>
+            <ul>
+                <li>Cleans phone numbers (removes "phone:" prefixes, normalizes formatting)</li>
+                <li>Deduplicates results</li>
+                <li>Handles partial data gracefully</li>
+            </ul>
+            
+            <h3>4. Batch Progress Tracking</h3>
+            <p>For large lead lists, real-time progress feedback:</p>
+            <div class="code-block">
+                <pre><code>[3/25] Processing: Jane Doe in New York, NY
+  ✓ Found 2 result(s)
+    1. Jane M Doe
+       Age: 42
+       Phone: (212) 555-1234</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Use Cases</h2>
+            <ul>
+                <li><strong>Real Estate:</strong> Finding property owners for outreach</li>
+                <li><strong>Collections:</strong> Locating debtors with current contact info</li>
+                <li><strong>Lead Generation:</strong> Enriching partial contact data</li>
+                <li><strong>Research:</strong> Background information gathering</li>
+                <li><strong>Reconnection:</strong> Finding old contacts who've moved</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Ethical Considerations</h2>
+            <p>This tool accesses publicly available information but should be used responsibly:</p>
+            <ul>
+                <li>Respect privacy laws (GDPR, CCPA, etc.)</li>
+                <li>Use data only for legitimate purposes</li>
+                <li>Honor opt-out requests</li>
+                <li>Comply with site Terms of Service</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Lessons Learned</h2>
+            <p><strong>Robustness Over Perfection:</strong> Web scraping is inherently fragile. Multiple fallback strategies beat perfectly optimized single-path solutions.</p>
+            
+            <p><strong>User Experience Matters:</strong> Even for CLI tools, clear progress indicators and helpful error messages improve usability dramatically.</p>
+            
+            <p><strong>Testability is Key:</strong> The offline mode turned out to be invaluable for rapid iteration without constantly hitting rate limits.</p>
+            
+            <p><strong>Browser Automation as Last Resort:</strong> HTTP requests are 10x faster, but browser automation is the ultimate fallback when detection gets too sophisticated.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Future Enhancements</h2>
+            <ul>
+                <li><strong>Parallel Processing:</strong> Async batch processing for faster throughput</li>
+                <li><strong>Database Storage:</strong> SQLite integration for historical tracking</li>
+                <li><strong>API Mode:</strong> Expose as REST API for integration with other tools</li>
+                <li><strong>Enhanced CAPTCHA Handling:</strong> Integration with CAPTCHA-solving services</li>
+                <li><strong>Result Confidence Scoring:</strong> Fuzzy matching to rank result relevance</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>TruePeopleSearch Skip Tracer showcases practical solutions to common web scraping challenges: anti-bot detection, flexible data extraction, and user-friendly interfaces. It's a tool built for real-world use, balancing automation speed with reliability and ethical considerations.</p>
+            
+            <p>The code demonstrates clean Python practices, thoughtful error handling, and a pragmatic approach to a problem that many developers face but few document publicly.</p>
+        </section>
+    </article>
+</body>
+</html>
