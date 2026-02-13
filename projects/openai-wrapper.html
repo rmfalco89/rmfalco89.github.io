@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Ebook to Audiobook Converter - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>AI-Powered Ebook to Audiobook Converter</h1>
+            <p class="subtitle">A sophisticated Python tool that transforms EPUB books into condensed, narrated audiobooks using AI</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/openai-wrapper" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python 3.8+</span>
+                    <span class="tech-tag">OpenAI API</span>
+                    <span class="tech-tag">Ollama</span>
+                    <span class="tech-tag">ebooklib</span>
+                    <span class="tech-tag">PyDub</span>
+                    <span class="tech-tag">BeautifulSoup</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p>The OpenAI Wrapper is a powerful EPUB-to-audiobook conversion pipeline that leverages multiple AI services to create condensed, narrated versions of ebooks. It intelligently preserves the author's voice while reducing redundancy, making lengthy books more digestible without losing their essence.</p>
+            <p><strong>Key Innovation:</strong> Unlike simple text-to-speech tools, this system can intelligently condense books to any percentage of their original length while maintaining the author's style—perfect for creating executive summaries of technical books or condensed versions of lengthy novels.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Why This Project Matters</h2>
+            
+            <h3>The Problem</h3>
+            <ul>
+                <li>Reading lengthy books takes time many people don't have</li>
+                <li>Standard audiobooks maintain full length and redundancy</li>
+                <li>Simple summarization tools lose the author's voice and narrative flow</li>
+                <li>Converting books to audio typically requires expensive professional narration</li>
+            </ul>
+            
+            <h3>The Solution</h3>
+            <p>An automated pipeline that:</p>
+            <ol>
+                <li><strong>Extracts</strong> structured content from EPUB files</li>
+                <li><strong>Condenses</strong> text using GPT while preserving literary style</li>
+                <li><strong>Narrates</strong> the condensed version with natural-sounding TTS</li>
+                <li><strong>Tracks</strong> all API usage and costs in a local database</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture & Design</h2>
+            
+            <h3>Multi-Provider AI Integration</h3>
+            <p>The project abstracts AI services behind a clean wrapper architecture:</p>
+            
+            <div class="code-block">
+                <pre><code>┌─────────────────────────────────────┐
+│         Main CLI Interface          │
+└──────────────┬──────────────────────┘
+               │
+     ┌─────────┴──────────┐
+     │                    │
+┌────▼─────┐      ┌──────▼───────┐
+│   GPT    │      │     TTS      │
+│ Wrappers │      │   Wrappers   │
+└────┬─────┘      └──────┬───────┘
+     │                   │
+┌────┴─────┐      ┌─────┴────────┐
+│ OpenAI   │      │   OpenAI     │
+│ Ollama   │      │   Kokoro     │
+└──────────┘      └──────────────┘</code></pre>
+            </div>
+            
+            <h3>Core Components</h3>
+            
+            <h4>1. EPUB Reader</h4>
+            <p>Intelligent chapter extraction with multiple detection methods:</p>
+            <ul>
+                <li><strong>Regex-based:</strong> Matches "Chapter N" patterns</li>
+                <li><strong>Numbered titles:</strong> Detects numbered chapters with separate title lines</li>
+                <li><strong>Auto-detection:</strong> Automatically selects the best method for each book</li>
+            </ul>
+            
+            <h4>2. Multi-Model GPT Wrapper</h4>
+            <p>Unified interface supporting multiple AI providers:</p>
+            <ul>
+                <li><strong>OpenAI GPT-4o/4o-mini:</strong> Cloud-based, high quality</li>
+                <li><strong>Ollama:</strong> Local models for privacy and cost savings</li>
+                <li>Token counting and quota management</li>
+                <li>Request logging for cost tracking</li>
+            </ul>
+            
+            <div class="code-block">
+                <p><strong>Smart Condensation:</strong></p>
+                <pre><code>prompt = api_gpt.format_prompt(
+    prompt_name="chapter_summary_preserve_style",
+    chapter_text=chapter_text,
+    new_lenght_percentage=condense_factor  # 20-100%
+)</code></pre>
+            </div>
+            
+            <h4>3. TTS Integration</h4>
+            <p>Dual TTS support:</p>
+            <ul>
+                <li><strong>OpenAI TTS:</strong> Professional-quality voices (alloy, echo, fable, etc.)</li>
+                <li><strong>Kokoro:</strong> Local open-source TTS for offline processing</li>
+                <li>Automatic chunking for long texts (4096 char limit)</li>
+                <li>Audio segment stitching with PyDub</li>
+            </ul>
+            
+            <h4>4. Condenser Pipeline</h4>
+            <p>The orchestration layer:</p>
+            <ol>
+                <li>Generates custom disclaimer based on condensation level</li>
+                <li>Processes each chapter through GPT</li>
+                <li>Saves intermediate text outputs</li>
+                <li>Converts all chapters to audio</li>
+                <li>Combines segments into continuous audiobook</li>
+            </ol>
+            
+            <h4>5. Database Tracking</h4>
+            <p>SQLite-based usage analytics tracking every API call for cost analysis and debugging.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Implementation</h2>
+            
+            <h3>Intelligent Text Splitting</h3>
+            <p>The <code>split_text_into_chunks()</code> utility preserves sentence boundaries while respecting API limits. This ensures:</p>
+            <ul>
+                <li>No mid-sentence cuts</li>
+                <li>Maximum API efficiency</li>
+                <li>Natural audio flow across chunks</li>
+            </ul>
+            
+            <h3>Style-Preserving Condensation</h3>
+            <p>The prompt engineering is crucial for quality condensation:</p>
+            
+            <div class="code-block">
+                <pre><code>Shorten while preserving the author's original tone and literary style.
+Eliminate redundancy, condense appropriately, preserve natural flow.
+
+Output requirements:
+* Plain text only (no markdown, bullets, formatting)
+* No commentary or notes
+* Same style as original - as if the author wrote a shorter version
+* Around {new_lenght_percentage}% of original length</code></pre>
+            </div>
+            
+            <p>This produces condensed text that feels like the original author's work, not a mechanical summary.</p>
+            
+            <h3>Retry Logic for Reliability</h3>
+            <p>The Kokoro wrapper implements robust retry logic with 30 attempts and exponential backoff—essential for long-running batch conversions.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Usage Examples</h2>
+            
+            <h3>Basic Conversion (Full Length)</h3>
+            <div class="code-block">
+                <pre><code>python main.py \
+  --epub "path/to/book.epub" \
+  --book-title "The Lean Startup" \
+  --book-author "Eric Ries" \
+  --condense 100 \
+  --gpt-model "ollama-llama3" \
+  --tts-model "kokoro"</code></pre>
+            </div>
+            
+            <h3>50% Condensation with OpenAI</h3>
+            <div class="code-block">
+                <pre><code>python main.py \
+  --epub "path/to/book.epub" \
+  --book-title "Thinking Fast and Slow" \
+  --book-author "Daniel Kahneman" \
+  --condense 50 \
+  --gpt-model "openai-gpt-4o-mini" \
+  --tts-model "tts-1"</code></pre>
+            </div>
+            
+            <h3>Aggressive 20% Summary</h3>
+            <div class="code-block">
+                <pre><code>python main.py \
+  --epub "path/to/book.epub" \
+  --book-title "The Art of War" \
+  --book-author "Sun Tzu" \
+  --condense 20 \
+  --gpt-model "openai-gpt-4o" \
+  --tts-model "tts-1-hd"</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Features</h2>
+            
+            <h3>1. Flexible Model Selection</h3>
+            <ul>
+                <li>Mix and match GPT and TTS providers</li>
+                <li>Use cloud services for quality or local models for privacy</li>
+                <li>Prefix-based model selection: <code>openai-</code>, <code>ollama-</code>, <code>kokoro</code></li>
+            </ul>
+            
+            <h3>2. Cost Optimization</h3>
+            <ul>
+                <li>Local Ollama models for condensation (free)</li>
+                <li>Database tracking for OpenAI API costs</li>
+                <li>Configurable condensation levels (20-100%)</li>
+            </ul>
+            
+            <h3>3. Quality Preservation</h3>
+            <ul>
+                <li>Style-aware condensation prompts</li>
+                <li>Sentence-boundary text splitting</li>
+                <li>Professional TTS voices</li>
+            </ul>
+            
+            <h3>4. Batch Processing</h3>
+            <ul>
+                <li>Automatic chapter detection</li>
+                <li>Sequential processing with progress tracking</li>
+                <li>Intermediate file saves for resume capability</li>
+            </ul>
+            
+            <h3>5. Multi-Voice TTS (Kokoro)</h3>
+            <p>Mixes multiple voices for variety in long audiobooks: <code>am_fenrir+am_michael+am_onyx</code></p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Design Decisions</h2>
+            
+            <h3>Why Wrapper Classes?</h3>
+            <p>The project uses wrapper classes instead of direct API calls to:</p>
+            <ol>
+                <li><strong>Abstract provider differences</strong> - Uniform interface for OpenAI and Ollama</li>
+                <li><strong>Centralize logging</strong> - All requests flow through DB handler</li>
+                <li><strong>Enable testing</strong> - Dry-run mode for token estimation</li>
+                <li><strong>Support future providers</strong> - Easy to add Claude, Gemini, etc.</li>
+            </ol>
+            
+            <h3>Why SQLite for Tracking?</h3>
+            <ul>
+                <li><strong>Portable</strong> - Single file database</li>
+                <li><strong>Zero setup</strong> - No server required</li>
+                <li><strong>Queryable</strong> - Easy cost analysis with SQL</li>
+                <li><strong>Persistent</strong> - Survives crashes/interrupts</li>
+            </ul>
+            
+            <h3>Why Multi-Provider TTS?</h3>
+            <ul>
+                <li><strong>Kokoro</strong> - Free, privacy-friendly, multi-voice mixing</li>
+                <li><strong>OpenAI</strong> - Professional quality for final productions</li>
+                <li>Users choose based on needs (cost vs. quality)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Applications</h2>
+            
+            <h3>1. Technical Book Summaries</h3>
+            <p>Convert 800-page programming books to 200-page condensed audiobooks for commute learning.</p>
+            
+            <h3>2. Executive Briefings</h3>
+            <p>20% condensation of business books for busy executives.</p>
+            
+            <h3>3. Language Learning</h3>
+            <p>Generate narrated simplified versions of classic literature.</p>
+            
+            <h3>4. Accessibility</h3>
+            <p>Create audio versions of public-domain books with customizable pacing.</p>
+            
+            <h3>5. Research Efficiency</h3>
+            <p>Quickly "read" multiple books on a topic by listening to condensed versions.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Code Quality Highlights</h2>
+            
+            <h3>Clean Abstractions</h3>
+            <p>Each component has a single responsibility:</p>
+            <ul>
+                <li><code>EpubReader</code> → Parse books</li>
+                <li><code>*Wrapper</code> → Handle AI APIs</li>
+                <li><code>Condenser</code> → Orchestrate pipeline</li>
+                <li><code>DBHandler</code> → Persist data</li>
+            </ul>
+            
+            <h3>Flexible Configuration</h3>
+            <p>Everything configurable via YAML:</p>
+            <ul>
+                <li>API keys (with project support)</li>
+                <li>Model selection</li>
+                <li>Audio format</li>
+                <li>Prompt templates</li>
+            </ul>
+            
+            <h3>Error Handling</h3>
+            <ul>
+                <li>Graceful retries for network issues</li>
+                <li>Informative error messages</li>
+                <li>Validation of inputs (file extensions, model names)</li>
+            </ul>
+            
+            <h3>Extensibility</h3>
+            <p>Adding a new AI provider requires only:</p>
+            <ol>
+                <li>Create wrapper class implementing <code>generate()</code> or <code>tts()</code></li>
+                <li>Add model prefix to CLI logic</li>
+                <li>Update config with credentials</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Performance Characteristics</h2>
+            
+            <h3>Speed (for a 300-page book)</h3>
+            <ul>
+                <li>Chapter extraction: ~5 seconds</li>
+                <li>GPT condensation (50%): ~2-5 minutes (depends on model)</li>
+                <li>TTS generation: ~10-20 minutes</li>
+                <li><strong>Total:</strong> ~15-30 minutes for a complete audiobook</li>
+            </ul>
+            
+            <h3>Cost (OpenAI APIs)</h3>
+            <ul>
+                <li>GPT-4o-mini condensation: ~$0.10-0.50 per book</li>
+                <li>TTS-1 narration: ~$0.50-2.00 per book</li>
+                <li><strong>Total:</strong> ~$0.60-2.50 per book</li>
+            </ul>
+            
+            <h3>Cost (Local Models)</h3>
+            <ul>
+                <li>Ollama GPT: Free (uses local GPU/CPU)</li>
+                <li>Kokoro TTS: Free (uses local resources)</li>
+                <li><strong>Total:</strong> $0 (electricity costs only)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Lessons</h2>
+            
+            <h3>1. Token Management is Critical</h3>
+            <p>Early versions hit OpenAI limits. Solution: pre-count tokens, implement chunking, enforce max_tokens config.</p>
+            
+            <h3>2. Audio Stitching Quality Matters</h3>
+            <p>First attempts had audible gaps between chunks. PyDub's AudioSegment concatenation solved this seamlessly.</p>
+            
+            <h3>3. Prompt Engineering Makes or Breaks Condensation</h3>
+            <p>Initial summaries were too mechanical. Adding "preserve the author's style" and "write as if the author themselves wrote a shorter version" dramatically improved quality.</p>
+            
+            <h3>4. Local Models are Viable</h3>
+            <p>Ollama's Llama 3 produces surprisingly good condensations for free, though slower than OpenAI.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p>The OpenAI Wrapper demonstrates sophisticated API integration, thoughtful architecture, and practical problem-solving. It's not just a script—it's a production-ready tool with proper error handling, configuration management, and extensibility.</p>
+            <p>The combination of intelligent condensation and multi-provider TTS creates a unique value proposition: personalized audiobooks at a fraction of professional production costs, with quality preservation that simple summarization tools can't match.</p>
+            <p><strong>Ready to transform your reading experience?</strong> Clone the repo and start converting your backlog into commute-friendly audiobooks.</p>
+        </section>
+    </article>
+</body>
+</html>
