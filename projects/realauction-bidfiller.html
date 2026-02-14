@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealAuction Auto Bidder - Tax Lien Auction Chrome Extension - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>RealAuction Auto Bidder</h1>
+            <p class="subtitle">Chrome extension that streamlines tax lien auction bidding by automating premium calculations across hundreds of properties</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/realauctionBidFiller" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Chrome Manifest V3</span>
+                    <span class="tech-tag">Vanilla JavaScript</span>
+                    <span class="tech-tag">Content Scripts</span>
+                    <span class="tech-tag">DOM Manipulation</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p><strong>RealAuction Auto Bidder</strong> is a Chrome extension designed to streamline the tax lien auction bidding process on the Colorado Tax Sale platform (El Paso County). The extension automates the tedious task of manually calculating and entering bid premiums for multiple properties, allowing investors to participate more efficiently in tax lien auctions.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Tax lien auctions often feature hundreds of properties listed across multiple pages. Bidders compete by offering to pay a premium percentage above the face value of the tax lien. Manually calculating these premiums for dozens or hundreds of properties is:</p>
+            <ul>
+                <li><strong>Time-consuming:</strong> Each property requires individual calculation and entry</li>
+                <li><strong>Error-prone:</strong> Mental math at auction speeds leads to mistakes</li>
+                <li><strong>Inefficient:</strong> Investors lose competitive advantage due to slow data entry</li>
+                <li><strong>Tedious:</strong> The repetitive nature makes it difficult to focus on investment strategy</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Solution</h2>
+            <p>This Chrome extension provides a simple popup interface that:</p>
+            <ol>
+                <li><strong>Accepts a premium percentage</strong> from the user (e.g., "15%" of face value)</li>
+                <li><strong>Automatically calculates</strong> the bid amount for every property on the current page</li>
+                <li><strong>Fills in all bid fields</strong> instantly with the calculated values</li>
+                <li><strong>Supports rounding</strong> to the nearest integer (optional)</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Implementation</h2>
+            
+            <h3>Architecture</h3>
+            <p>The extension follows Chrome's Manifest V3 architecture with three main components:</p>
+            
+            <h4>manifest.json - Permissions & Configuration</h4>
+            <p>Defines extension metadata with minimal, security-focused permissions:</p>
+            <ul>
+                <li><code>activeTab</code> - Only operates on the currently active tab</li>
+                <li><code>scripting</code> - Injects the bid-filling function into the page</li>
+                <li><code>storage</code> - Reserved for saving user preferences</li>
+                <li>Host permissions restricted to <code>https://elpaso.coloradotaxsale.com/*</code></li>
+            </ul>
+            
+            <h4>popup.html - User Interface</h4>
+            <p>Clean, minimal popup interface with:</p>
+            <ul>
+                <li>Input field for percentage (e.g., "15")</li>
+                <li>Checkbox to enable/disable rounding</li>
+                <li>"Fill Bids" button to execute the automation</li>
+            </ul>
+            
+            <h4>popup.js - Orchestration Logic</h4>
+            <p>Coordinates the bid-filling process using Chrome's scripting API to inject functionality directly into the auction page.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Core Algorithm</h2>
+            <p>The <code>fillBids</code> function performs precise calculations:</p>
+            <ol>
+                <li><strong>Selects all premium input fields</strong> using the pattern <code>input[id^="userBidEntry"]</code></li>
+                <li><strong>For each property:</strong>
+                    <ul>
+                        <li>Extracts the <code>itemId</code> from the input element</li>
+                        <li>Finds the corresponding face value element <code>#faceValue{itemId}</code></li>
+                        <li>Parses the face value (removing currency symbols and formatting)</li>
+                        <li>Calculates: <code>bidValue = faceValue × (percentage / 100)</code></li>
+                        <li>Optionally rounds up using <code>Math.ceil()</code></li>
+                        <li>Fills the input field with the calculated value</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <div class="code-block">
+                <pre><code>premiumInputs.forEach(input => {
+  const itemId = input.getAttribute('itemid');
+  const faceValueElement = document.querySelector(`#faceValue${itemId}`);
+  
+  if (faceValueElement) {
+    let faceValueText = faceValueElement.getAttribute('price') 
+                        || faceValueElement.textContent;
+    let faceValue = parseFloat(faceValueText.replace(/[^0-9\.]/g, ''));
+    
+    if (!isNaN(faceValue)) {
+      let calculatedBidValue = (faceValue * (bidValue / 100));
+      if (roundUp) {
+        calculatedBidValue = Math.ceil(calculatedBidValue);
+      }
+      input.value = calculatedBidValue.toFixed(0);
+    }
+  }
+});</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Error Handling</h2>
+            <p>The extension includes robust validation:</p>
+            <ul>
+                <li>Checks for valid bid percentage input (<code>isNaN(bidValue) || bidValue <= 0</code>)</li>
+                <li>Verifies face value elements exist before attempting to parse</li>
+                <li>Logs detailed console messages for debugging</li>
+                <li>Gracefully handles missing or malformed data</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Features</h2>
+            
+            <h3>Current Features</h3>
+            <ul>
+                <li>✅ <strong>Instant Bid Calculation</strong> - Calculates premiums for all visible properties in milliseconds</li>
+                <li>✅ <strong>Percentage-Based Bidding</strong> - Enter a single percentage (e.g., 15%) to apply across all properties</li>
+                <li>✅ <strong>Optional Rounding</strong> - Round calculated premiums up to the nearest dollar</li>
+                <li>✅ <strong>Site-Specific Integration</strong> - Tailored specifically for elpaso.coloradotaxsale.com</li>
+                <li>✅ <strong>Clean UI</strong> - Minimal, intuitive popup interface</li>
+            </ul>
+            
+            <h3>Future Enhancements (Commented Code)</h3>
+            <p>The codebase includes commented-out functionality for:</p>
+            <ul>
+                <li><strong>Multi-page automation:</strong> Automatically navigate through pagination</li>
+                <li><strong>Budget management:</strong> Cap total bids at a specified budget</li>
+                <li><strong>Auto-submission:</strong> Automatically click "Place Bid" buttons</li>
+                <li><strong>Batch processing:</strong> Process all pages in a single operation</li>
+            </ul>
+            <p><em>These features were likely disabled to give the user more control over the bidding process and prevent accidental bulk submissions.</em></p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Use Cases</h2>
+            
+            <h3>Tax Lien Investing</h3>
+            <p>Tax lien investors use this extension to:</p>
+            <ul>
+                <li>Quickly evaluate and bid on high-volume auction days</li>
+                <li>Maintain consistent premium percentages across their portfolio</li>
+                <li>Reduce manual entry errors during time-sensitive auctions</li>
+                <li>Focus on strategy rather than data entry</li>
+            </ul>
+            
+            <h3>Investment Strategy</h3>
+            <p>By automating the calculation and entry process, investors can:</p>
+            <ul>
+                <li><strong>Test different premium strategies</strong> by changing the percentage and re-filling</li>
+                <li><strong>Respond faster</strong> to auction dynamics</li>
+                <li><strong>Analyze more properties</strong> in the same time frame</li>
+                <li><strong>Reduce cognitive load</strong> during high-pressure auction environments</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Installation & Usage</h2>
+            
+            <h3>Installation</h3>
+            <ol>
+                <li>Clone the repository: <code>git clone https://github.com/rmfalco89/realauctionBidFiller.git</code></li>
+                <li>Open Chrome and navigate to <code>chrome://extensions/</code></li>
+                <li>Enable "Developer mode" (toggle in top-right corner)</li>
+                <li>Click "Load unpacked"</li>
+                <li>Select the <code>realauctionBidFiller</code> directory</li>
+            </ol>
+            
+            <h3>Usage</h3>
+            <ol>
+                <li>Navigate to an active auction page on elpaso.coloradotaxsale.com</li>
+                <li>Click the extension icon in the Chrome toolbar</li>
+                <li>Enter your desired premium percentage (e.g., "15")</li>
+                <li>Optionally enable "Round up to nearest integer"</li>
+                <li>Click "Fill Bids"</li>
+                <li>All bid fields will populate instantly</li>
+                <li>Review and manually submit your selected bids</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Design Philosophy</h2>
+            <p>The extension follows a conservative automation approach:</p>
+            <ul>
+                <li><strong>Semi-automated</strong> rather than fully automated</li>
+                <li>User retains control over final bid submission</li>
+                <li>Transparent calculation with console logging</li>
+                <li>No persistent state or data collection</li>
+            </ul>
+            
+            <h3>Why No Auto-Submit?</h3>
+            <p>Giving users manual control over submission prevents accidental bids and maintains compliance with auction rules. The tool <em>empowers</em> users rather than removing their agency.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Challenges</h2>
+            
+            <h3>Dynamic DOM Manipulation</h3>
+            <p>The auction site likely uses dynamic content loading. The extension handles this by:</p>
+            <ul>
+                <li>Using attribute selectors (<code>id^="userBidEntry"</code>)</li>
+                <li>Checking for element existence before manipulation</li>
+                <li>Providing detailed error logging</li>
+            </ul>
+            
+            <h3>Data Parsing</h3>
+            <p>Face values may appear in various formats (<code>$1,234.56</code>, <code>1234.56</code>, etc.). The extension uses regex to strip non-numeric characters:</p>
+            <div class="code-block">
+                <pre><code>faceValueText.replace(/[^0-9\.]/g, '')</code></pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Real-World Impact</h2>
+            <p>This extension demonstrates how small automation tools can provide outsized value in niche domains:</p>
+            <ul>
+                <li><strong>Time Savings:</strong> Reduces 30+ minutes of manual work to 30 seconds</li>
+                <li><strong>Accuracy:</strong> Eliminates calculation errors during high-pressure auctions</li>
+                <li><strong>Scalability:</strong> Enables investors to evaluate more properties</li>
+                <li><strong>Competitive Advantage:</strong> Faster response times in competitive auctions</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Potential Improvements</h2>
+            
+            <h3>User Experience</h3>
+            <ul>
+                <li><strong>Save preferences:</strong> Remember last-used percentage</li>
+                <li><strong>Undo button:</strong> Clear all filled bids</li>
+                <li><strong>Preview mode:</strong> Show calculated values before filling</li>
+            </ul>
+            
+            <h3>Functionality</h3>
+            <ul>
+                <li><strong>Multi-strategy bidding:</strong> Different percentages for different property types</li>
+                <li><strong>Export functionality:</strong> Export filled bids to CSV for record-keeping</li>
+                <li><strong>Budget alerts:</strong> Warn when total bids approach budget limit</li>
+            </ul>
+            
+            <h3>Code Quality</h3>
+            <ul>
+                <li><strong>TypeScript:</strong> Add type safety</li>
+                <li><strong>Testing:</strong> Unit tests for calculation logic</li>
+                <li><strong>Minification:</strong> Optimize for size and performance</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Key Takeaways</h2>
+            <p>RealAuction Auto Bidder exemplifies pragmatic software engineering: a focused tool that solves a specific problem exceptionally well. It demonstrates:</p>
+            <ul>
+                <li><strong>Domain expertise:</strong> Deep understanding of tax lien auction workflows</li>
+                <li><strong>User empathy:</strong> Automation that enhances rather than replaces human judgment</li>
+                <li><strong>Technical competence:</strong> Clean implementation of Chrome extension APIs</li>
+                <li><strong>Restraint:</strong> Resisting feature creep in favor of reliability</li>
+            </ul>
+            <p>This project showcases the value of building tools that integrate seamlessly into existing workflows, providing immediate, measurable value to a specific user community.</p>
+        </section>
+        
+        <footer class="project-footer">
+            <a href="../index.html" class="footer-link">← Back to all projects</a>
+            <a href="https://github.com/rmfalco89/realauctionBidFiller" target="_blank" class="footer-link">View on GitHub →</a>
+        </footer>
+    </article>
+</body>
+</html>
