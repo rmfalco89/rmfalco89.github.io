@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinDarts - Time-Series Prediction for Cryptocurrency Prices - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>CoinDarts</h1>
+            <p class="subtitle">Time-Series Prediction for Cryptocurrency Prices</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/CoinDarts" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Darts</span>
+                    <span class="tech-tag">PyTorch</span>
+                    <span class="tech-tag">pandas</span>
+                    <span class="tech-tag">scikit-learn</span>
+                    <span class="tech-tag">LSTM</span>
+                    <span class="tech-tag">Time Series</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>Overview</h2>
+            <p><strong>CoinDarts</strong> is a modular, extensible time-series prediction framework built with the <a href="https://unit8co.github.io/darts/" target="_blank">Darts</a> library for forecasting cryptocurrency prices, specifically Bitcoin (BTC). It demonstrates advanced machine learning techniques for financial forecasting with a clean, production-ready architecture that makes adding new models trivial.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>The Problem</h2>
+            <p>Cryptocurrency price prediction is notoriously challenging due to:</p>
+            <ul>
+                <li><strong>High volatility</strong>: Rapid, unpredictable price swings</li>
+                <li><strong>Non-stationarity</strong>: Statistical properties change over time</li>
+                <li><strong>Complex dependencies</strong>: Multiple interacting factors (volume, market sentiment, historical patterns)</li>
+            </ul>
+            <p>Traditional statistical models often fail to capture these complexities. CoinDarts leverages modern deep learning approaches (RNNs, LSTMs, GRUs) alongside ensemble methods (Random Forest) to tackle this challenge.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture & Design</h2>
+            
+            <div class="feature-card">
+                <h3>Modular Command-Line Interface</h3>
+                <p>The project centers around <code>train_my_model.py</code>, which uses Python's <code>argparse</code> with <strong>subcommand pattern</strong> — each model type gets its own training function with custom arguments:</p>
+                
+                <div class="code-block">
+                    <pre>
+@subcommand(
+    argument("--model_type", default='LSTM', choices=['LSTM', 'RNN', 'GRU']),
+    argument("--input_chunk_length", default=14, type=int),
+    argument("--output_chunk_length", default=1, type=int),
+    argument("--n_epochs", default=300, type=int),
+    ...
+)
+def train_rnn(model_name, all_data, logger, args):
+    # Training logic here
+                    </pre>
+                </div>
+                
+                <p><strong>Why this matters</strong>: Adding a new model is as simple as writing a new <code>@subcommand</code> decorated function. No need to modify the core training loop or argument parser.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Model Handlers</h3>
+                <p>Each model type inherits from <code>ModelHandler</code>, providing a consistent interface:</p>
+                
+                <div class="code-block">
+                    <pre>
+class RNNModelHandler(ModelHandler):
+    """Uses FUTURE covariates (e.g., planned announcements, scheduled events)"""
+    
+class BlockRNNModelHandler(ModelHandler):
+    """Uses PAST covariates only (e.g., historical volume, price movements)"""
+    
+class RandomForestModelHandler(ModelHandler):
+    """Ensemble method for comparison/baseline"""
+                    </pre>
+                </div>
+                
+                <p>This abstraction makes it trivial to swap models while keeping the training pipeline unchanged.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Data Pipeline</h2>
+            
+            <div class="feature-card">
+                <h3>Train/Test Split with Time Awareness</h3>
+                <p>Unlike traditional ML, time-series models <strong>must preserve temporal order</strong>. CoinDarts properly splits data chronologically:</p>
+                
+                <div class="code-block">
+                    <pre>
+len_test = math.floor(test_percentage * len(target_series))
+target_series_train, target_series_test = target_series[:-len_test], target_series[-len_test:]
+                    </pre>
+                </div>
+                
+                <p>The most recent data becomes the test set — simulating real-world prediction scenarios.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Normalization with Scaler</h3>
+                <p>Optional data normalization via Darts' <code>Scaler</code>:</p>
+                
+                <div class="code-block">
+                    <pre>
+transformer.fit(target_series)  # Fit on full series
+target_train = transformer.transform(target_train)
+target_test = transformer.transform(target_test)
+                    </pre>
+                </div>
+                
+                <p><strong>Critical detail</strong>: The scaler is fit on the entire series, then applied to splits. This prevents <strong>data leakage</strong> while ensuring consistent scaling.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Target vs. Covariates</h3>
+                <ul>
+                    <li><strong>Target columns</strong>: What we're predicting (e.g., <code>price_variation_t</code>)</li>
+                    <li><strong>Covariates</strong>: Additional features to inform predictions:
+                        <ul>
+                            <li><strong>Past covariates</strong>: Historical data (volume, price movements)</li>
+                            <li><strong>Future covariates</strong>: Known future values (e.g., scheduled events)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Supported Models</h2>
+            
+            <div class="feature-card">
+                <h3>1. RNN/LSTM/GRU (RNNModel)</h3>
+                <ul>
+                    <li>Uses <strong>future covariates</strong> (information about the future)</li>
+                    <li><strong>Best for</strong>: Scenarios with known future events</li>
+                    <li><strong>Key hyperparameters</strong>:
+                        <ul>
+                            <li><code>input_chunk_length</code>: How many past timesteps to consider</li>
+                            <li><code>output_chunk_length</code>: How many future timesteps to predict</li>
+                            <li><code>hidden_dim</code>: Network capacity</li>
+                            <li><code>dropout</code>: Regularization to prevent overfitting</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. BlockRNN</h3>
+                <ul>
+                    <li>Uses <strong>past covariates only</strong></li>
+                    <li><strong>Best for</strong>: Pure historical-based forecasting</li>
+                    <li>Similar architecture to RNNModel but different covariate handling</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Random Forest</h3>
+                <ul>
+                    <li>Ensemble tree-based method</li>
+                    <li><strong>Best for</strong>: Baseline comparison, feature importance analysis</li>
+                    <li><strong>Key hyperparameters</strong>:
+                        <ul>
+                            <li><code>lags</code>: Number of past timesteps to consider</li>
+                            <li><code>n_estimators</code>: Number of trees</li>
+                            <li><code>max_depth</code>: Tree complexity</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Example Usage</h2>
+            <p>Train an LSTM model on Bitcoin data:</p>
+            
+            <div class="code-block">
+                <pre>
+python train_my_model.py \
+    --dataset BTC_sample_300.csv \
+    --test-percentage 0.15 \
+    --model-name btc_lstm_experiment \
+    --target-columns price_variation_t \
+    train_rnn \
+        --model_type LSTM \
+        --input_chunk_length 14 \
+        --output_chunk_length 1 \
+        --n_epochs 300
+                </pre>
+            </div>
+            
+            <p>This command:</p>
+            <ol>
+                <li>Loads <code>BTC_sample_300.csv</code></li>
+                <li>Splits 15% for testing</li>
+                <li>Trains an LSTM for 300 epochs</li>
+                <li>Logs all results to <code>coindarts_log/btc_lstm_experiment_[timestamp].log</code></li>
+                <li>Saves the trained model</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Evaluation Metrics</h2>
+            <p>The project includes custom evaluation functions:</p>
+            <ul>
+                <li><strong>Directional accuracy</strong>: Does the model correctly predict price movement direction (up/down)?</li>
+                <li><strong>Magnitude error</strong>: How far off are the predictions in absolute terms?</li>
+            </ul>
+            <p>For crypto trading, <strong>directional accuracy often matters more than precise values</strong> — knowing whether to buy or sell is more valuable than predicting the exact price.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Production Readiness</h2>
+            
+            <div class="feature-card">
+                <h3>Logging & Reproducibility</h3>
+                <p>Every training run gets:</p>
+                <ul>
+                    <li><strong>Timestamped logs</strong>: <code>model_name_YYYYMMDD_HHMM.log</code></li>
+                    <li><strong>Complete hyperparameter tracking</strong>: All <code>args</code> logged</li>
+                    <li><strong>TensorBoard support</strong>: Visual training monitoring (optional with <code>--log_tensorboard</code>)</li>
+                </ul>
+                
+                <div class="code-block">
+                    <pre>
+logger = utils.create_logger(model_name, logging.INFO)
+logger.info(f"All args: {vars(args)}")
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Extensibility</h3>
+                <p>Adding a new model type (e.g., Transformer, Prophet):</p>
+                <ol>
+                    <li>Create a <code>ModelHandler</code> subclass in <code>lib/ModelHandler.py</code></li>
+                    <li>Write a <code>@subcommand</code> decorated function in <code>train_my_model.py</code></li>
+                    <li>Done!</li>
+                </ol>
+                <p>No framework modifications required.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Technical Highlights</h2>
+            <ol>
+                <li><strong>Proper time-series handling</strong>: No future data leakage, chronological splits</li>
+                <li><strong>Flexible covariate system</strong>: Supports past, future, and mixed covariates</li>
+                <li><strong>Hyperparameter-driven</strong>: Every model tunable via CLI flags</li>
+                <li><strong>Clean separation of concerns</strong>: Data prep, model definition, training, evaluation all decoupled</li>
+                <li><strong>Research-friendly</strong>: Jupyter notebooks (<code>PlayGround.ipynb</code>, <code>TestModel.ipynb</code>) for experimentation</li>
+            </ol>
+        </section>
+        
+        <section class="content-section">
+            <h2>Dataset</h2>
+            <p>Includes two Bitcoin datasets:</p>
+            <ul>
+                <li><strong>BTC_sample_300.csv</strong>: Small sample for quick experiments (300 records)</li>
+                <li><strong>BTC_complete_dataset.csv</strong>: Full historical data (~20MB, ~150K records)</li>
+            </ul>
+            <p>Columns include:</p>
+            <ul>
+                <li><code>date</code>: Timestamp</li>
+                <li><code>close_price</code>, <code>lowest_price</code>: Price data</li>
+                <li><code>volume</code>: Trading volume</li>
+                <li><code>price_variation_t</code>: Target variable (price change)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>What I Learned Building This</h2>
+            
+            <div class="feature-card">
+                <h3>Why Darts?</h3>
+                <p><a href="https://unit8co.github.io/darts/" target="_blank">Darts</a> is a relatively new library (by Unit8) that provides:</p>
+                <ul>
+                    <li>Unified API for statistical models (ARIMA, Prophet) and deep learning (RNN, Transformer)</li>
+                    <li>Built-in time-series utilities (train/val splits, backtesting, metrics)</li>
+                    <li>Easy covariate handling</li>
+                </ul>
+                <p>It saved me from writing boilerplate for sequence batching, windowing, and model checkpointing.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>The Importance of Baselines</h3>
+                <p>The Random Forest model serves as a <strong>sanity check</strong>:</p>
+                <ul>
+                    <li>If deep learning can't beat a simple tree ensemble, the problem might be:
+                        <ul>
+                            <li>Insufficient data</li>
+                            <li>Poor feature engineering</li>
+                            <li>Overfitting</li>
+                            <li>Random noise dominating signal</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>Always start simple before going complex.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Crypto Prediction Reality Check</h3>
+                <p>Even with state-of-the-art models:</p>
+                <ul>
+                    <li><strong>Prediction is not profit</strong>: Transaction costs, slippage, and market impact eat returns</li>
+                    <li><strong>Overfitting is dangerous</strong>: Models trained on historical crypto data often fail spectacularly on new data</li>
+                    <li><strong>Feature engineering matters</strong>: Raw prices are noisy; engineered features (moving averages, volatility indicators) often improve results</li>
+                </ul>
+                <p>This project is more about learning time-series ML than getting rich quick.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Future Enhancements</h2>
+            <p>Potential improvements:</p>
+            <ul>
+                <li><strong>Transformer models</strong>: Attention mechanisms for longer-range dependencies</li>
+                <li><strong>Hyperparameter optimization</strong>: Automated tuning with Optuna or Ray Tune</li>
+                <li><strong>Live data integration</strong>: Real-time API feeds from crypto exchanges</li>
+                <li><strong>Backtesting framework</strong>: Simulate trading strategies with realistic costs</li>
+                <li><strong>Multi-asset support</strong>: Generalize beyond Bitcoin (Ethereum, stocks, etc.)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p><strong>CoinDarts</strong> is a well-architected time-series forecasting framework that demonstrates:</p>
+            <ul>
+                <li>Clean Python design patterns (decorator-based CLI, inheritance for model handlers)</li>
+                <li>Proper machine learning practices (chronological splits, no data leakage, logging)</li>
+                <li>Production-ready extensibility (adding models requires minimal code changes)</li>
+            </ul>
+            <p>While cryptocurrency prediction remains an unsolved problem, this project provides a solid foundation for anyone exploring time-series ML with modern tools.</p>
+            <p><em>Built to explore the intersection of deep learning and financial forecasting — with a healthy dose of skepticism about "beating the market."</em></p>
+        </section>
+    </article>
+</body>
+</html>
