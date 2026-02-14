@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>my-claude-config - Scaling AI-Assisted Development - Riccardo Marino</title>
+    <link rel="stylesheet" href="../css/project.css">
+</head>
+<body>
+    <nav class="back-nav">
+        <a href="../index.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Portfolio
+        </a>
+    </nav>
+    
+    <article class="project-detail">
+        <header class="project-header">
+            <h1>my-claude-config</h1>
+            <p class="subtitle">Scaling AI-Assisted Development</p>
+            <div class="project-meta">
+                <a href="https://github.com/rmfalco89/my-claude-config" target="_blank" class="github-link">
+                    View on GitHub
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <div class="tech-stack">
+                    <span class="tech-tag">Bash</span>
+                    <span class="tech-tag">Claude Code</span>
+                    <span class="tech-tag">Git</span>
+                    <span class="tech-tag">AI Automation</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="content-section">
+            <h2>The Meta-Tool Problem</h2>
+            <p>As AI coding assistants become central to software development workflows, a new challenge emerges: <strong>how do you scale and manage AI configurations across multiple projects?</strong></p>
+            
+            <p>When working with Claude Code (Anthropic's official CLI), each project can have custom agents, slash commands, hooks, and templates. But copying configurations manually between projects is error-prone, and maintaining consistency across a growing portfolio becomes a bottleneck.</p>
+            
+            <p><strong>my-claude-config</strong> solves this by treating AI configurations as first-class infrastructure—versioned, branched, and automatically synchronized across projects.</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>Architecture Overview</h2>
+            <p>This is a Git-based configuration repository with automated import/export tooling:</p>
+            
+            <div class="code-block">
+                <pre>
+my-claude-config/
+├── .claude/                    # Claude Code configurations
+│   ├── agents/                 # Specialized AI agents
+│   │   ├── tech-lead-architect.md
+│   │   ├── devops-k8s-engineer.md
+│   │   ├── code-review-specialist.md
+│   │   ├── automation-specialist.md
+│   │   └── [10+ more specialized agents]
+│   ├── commands/               # Custom slash commands
+│   │   ├── spin-eng.md        # Isolated workspace creation
+│   │   ├── review-code.md
+│   │   └── finalize-work.md
+│   └── settings.json          # Global Claude Code settings
+├── scripts/
+│   ├── export-claude-config.sh   # 434 lines - export automation
+│   └── manage-claude-config.sh   # 400 lines - import automation
+├── claude-export               # Wrapper for export script
+├── claude-import               # Wrapper for import script
+└── commands/                   # Claude-callable commands
+    ├── import-config.md
+    └── export-config.md
+                </pre>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Core Capabilities</h2>
+            
+            <div class="feature-card">
+                <h3>1. Specialized AI Agents</h3>
+                <p>The repository defines <strong>13+ specialized agents</strong>, each with distinct expertise:</p>
+                
+                <ul>
+                    <li><strong>tech-lead-architect</strong> - System design, technology selection, architecture decisions</li>
+                    <li><strong>devops-k8s-engineer</strong> - Kubernetes, CI/CD, monitoring, cost optimization</li>
+                    <li><strong>code-review-specialist</strong> - Code quality, best practices, security review</li>
+                    <li><strong>automation-specialist</strong> - Workflow automation and efficiency improvements</li>
+                    <li><strong>data-ai-engineer</strong> - ML pipelines, data processing, model deployment</li>
+                    <li><strong>product-strategist</strong> - Product planning, feature prioritization, user research</li>
+                    <li><strong>legal-compliance-expert</strong> - Privacy, terms of service, regulatory compliance</li>
+                    <li><strong>localization-specialist</strong> - Internationalization and multi-language support</li>
+                </ul>
+                
+                <p>Each agent has:</p>
+                <ul>
+                    <li><strong>Defined responsibilities</strong> - Clear scope of expertise</li>
+                    <li><strong>Decision-making framework</strong> - How to approach problems</li>
+                    <li><strong>Research-first methodology</strong> - Always check current best practices</li>
+                    <li><strong>Cost consciousness</strong> - Optimize for maintainability and TCO</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Example: tech-lead-architect Agent</h3>
+                <div class="code-block">
+                    <pre>
+Your approach:
+1. Research First: Always conduct web searches for current best practices
+2. Question Assumptions: Challenge requirements and proposed directions
+3. Plan Before Code: Never implement without a comprehensive action plan
+4. Cost-Conscious Design: Evaluate operational costs and maintenance burden
+5. Scalability Focus: Design systems that grow with demand
+6. Reusability Mindset: Identify patterns for code abstraction
+                    </pre>
+                </div>
+                <p>This transforms Claude from a general-purpose assistant into a domain expert that follows specific workflows.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Automated Configuration Management</h3>
+                <p>The import/export scripts handle the complex task of synchronizing configurations between the central repository and individual projects.</p>
+                
+                <p><strong>Export workflow:</strong></p>
+                <div class="code-block">
+                    <pre>
+./claude-export /path/to/project main
+                    </pre>
+                </div>
+                <ul>
+                    <li>Validates branch exists</li>
+                    <li>Detects conflicts in destination project</li>
+                    <li>Offers skip/overwrite/rename options</li>
+                    <li>Creates proper <code>.claude/</code> directory structure</li>
+                    <li>Supports selective export (only specific agents/commands)</li>
+                </ul>
+                
+                <p><strong>Import workflow:</strong></p>
+                <div class="code-block">
+                    <pre>
+./claude-import /path/to/project
+                    </pre>
+                </div>
+                <ul>
+                    <li>Detects if project has existing Claude configs</li>
+                    <li>Offers to create project branch or integrate with main</li>
+                    <li>Handles duplicate detection intelligently</li>
+                    <li>Auto-commits and pushes changes to remote</li>
+                    <li>Maintains sync across environments</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Multi-Project Branching Strategy</h3>
+                <p>The repository uses Git branches to manage configurations for different contexts:</p>
+                <ul>
+                    <li><strong>main</strong> - Universal agents suitable for any project</li>
+                    <li><strong>Feature branches</strong> - Domain-specific configurations (e.g., <code>feature/security-agents</code>)</li>
+                    <li><strong>Project branches</strong> - Imported configurations from specific projects</li>
+                </ul>
+                
+                <p>This allows:</p>
+                <ul>
+                    <li>Shared configurations to evolve centrally</li>
+                    <li>Project-specific customizations to coexist</li>
+                    <li>Easy rollback when experiments don't work out</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Workspace Isolation for Multi-Agent Development</h3>
+                <p>The <code>/spin-eng</code> command creates isolated workspaces to prevent conflicts when multiple Claude agents work concurrently:</p>
+                
+                <div class="code-block">
+                    <pre>
+/spin-eng
+                    </pre>
+                </div>
+                
+                <p>This:</p>
+                <ol>
+                    <li>Creates timestamped workspace in <code>.syp-agents-workspaces/agent-{timestamp}/</code></li>
+                    <li>Clones the repo to isolated location</li>
+                    <li>Sets up dual remotes (origin=workspace, upstream=main)</li>
+                    <li>Pulls latest changes from main</li>
+                    <li>Creates unique work branch</li>
+                    <li>Changes working directory to new workspace</li>
+                </ol>
+                
+                <p><strong>Problem it solves:</strong> When running multiple Claude Code instances (e.g., one for backend, one for frontend), they'd conflict on the same Git branch. Isolated workspaces let each agent work independently, then merge back via PRs.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Design Philosophy</h2>
+            
+            <div class="feature-card">
+                <h3>Configuration as Code</h3>
+                <p>The project applies <strong>infrastructure-as-code principles</strong> to AI assistant configurations:</p>
+                <ul>
+                    <li><strong>Version controlled</strong> - Every change is tracked in Git</li>
+                    <li><strong>Branching strategy</strong> - Test experiments before rolling out globally</li>
+                    <li><strong>Automated sync</strong> - Changes propagate automatically to projects</li>
+                    <li><strong>Documented</strong> - Every agent and command has clear usage examples</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Research-First Workflow</h3>
+                <p>All agents are trained to follow a research-first approach:</p>
+                <ol>
+                    <li><strong>Web search</strong> for current best practices</li>
+                    <li><strong>Question assumptions</strong> before implementing</li>
+                    <li><strong>Create detailed plan</strong> before writing code</li>
+                    <li><strong>Consider costs</strong> (time, money, maintenance)</li>
+                    <li><strong>Only then implement</strong></li>
+                </ol>
+                <p>This prevents premature optimization and ensures solutions align with current industry standards.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Reusability and Abstraction</h3>
+                <p>The tech-lead-architect agent explicitly prioritizes:</p>
+                <ul>
+                    <li>Identifying reusable components</li>
+                    <li>Creating abstractions for common patterns</li>
+                    <li>Building libraries that work across projects</li>
+                    <li>Optimizing for long-term maintainability</li>
+                </ul>
+                <p>This mindset, encoded in the AI's instructions, leads to cleaner codebases over time.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Use Cases</h2>
+            
+            <div class="feature-card">
+                <h3>1. Onboarding New Projects</h3>
+                <p>When starting a new project:</p>
+                <div class="code-block">
+                    <pre>
+cd /path/to/new-project
+~/.claude-configs/claude-export . main
+                    </pre>
+                </div>
+                <p>Instantly get:</p>
+                <ul>
+                    <li>All specialized agents</li>
+                    <li>Custom slash commands</li>
+                    <li>Standardized settings</li>
+                    <li>Workflow automation tools</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Sharing Configurations Across Teams</h3>
+                <p>Export project-specific agents to share with teammates:</p>
+                <div class="code-block">
+                    <pre>
+./claude-export /path/to/team-repo feature/ml-pipeline
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Testing Experimental Agents</h3>
+                <p>Create a feature branch, test new agents on one project, then merge to main when proven:</p>
+                <div class="code-block">
+                    <pre>
+git checkout -b feature/test-new-agent
+# Make changes
+./claude-export /path/to/test-project feature/test-new-agent
+# Test in real project
+# If successful, merge to main
+                    </pre>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Maintaining Consistency Across Portfolio</h3>
+                <p>As the configuration repository evolves, propagate updates:</p>
+                <div class="code-block">
+                    <pre>
+# Update central repo
+cd ~/.claude-configs
+git pull
+
+# Re-export to all projects
+for project in ~/projects/*; do
+  ./claude-export "$project" main
+done
+                    </pre>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Lessons from Building a Meta-Tool</h2>
+            
+            <div class="feature-card">
+                <h3>1. Abstractions Enable Scale</h3>
+                <p>By abstracting "how to configure an AI assistant" into reusable components, this project makes it trivial to maintain consistent AI behavior across dozens of projects.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>2. Automation Prevents Drift</h3>
+                <p>Manual configuration copying leads to divergence over time. Automated sync ensures all projects benefit from improvements to the central repository.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>3. Git Workflows Apply to Non-Code Assets</h3>
+                <p>Branches, commits, and PRs work just as well for AI configurations as they do for code. Treating configs as first-class artifacts unlocks powerful workflows.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>4. Specialization Improves Outcomes</h3>
+                <p>General-purpose AI assistants are helpful, but specialized agents with narrow expertise and defined workflows produce higher-quality results. The tech-lead-architect agent <strong>always</strong> researches before implementing, while the devops-k8s-engineer <strong>always</strong> considers cost optimization—encoding best practices into the AI itself.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>Impact on Development Workflow</h2>
+            <p>This project transforms AI-assisted development from "helpful chatbot" to "team of specialized experts":</p>
+            
+            <ul>
+                <li><strong>Before:</strong> One general-purpose Claude, inconsistent configurations per project</li>
+                <li><strong>After:</strong> 13+ specialized agents, consistent across portfolio, automatically synced</li>
+            </ul>
+            
+            <p><strong>Productivity gains:</strong></p>
+            <ul>
+                <li>Faster project setup (1 command vs. manual config)</li>
+                <li>Higher quality outputs (specialized agents follow domain best practices)</li>
+                <li>Reduced context switching (AI remembers project-specific patterns)</li>
+                <li>Easier collaboration (teammates get same AI setup)</li>
+            </ul>
+        </section>
+        
+        <section class="content-section">
+            <h2>Conclusion</h2>
+            <p><strong>my-claude-config</strong> demonstrates that AI tooling can be treated as infrastructure—versioned, automated, and scaled. By encoding expertise into specialized agents and automating configuration management, it transforms ad-hoc AI assistance into a reliable, consistent development platform.</p>
+            
+            <p><strong>Key takeaway:</strong> The best developer tools are the ones you build for yourself. When off-the-shelf solutions don't scale, building custom automation—even for managing other automation—can unlock entirely new workflows.</p>
+        </section>
+        
+        <footer class="project-footer">
+            <div class="project-status">
+                <div class="status-item">
+                    <span class="status-label">Status:</span>
+                    <span class="status-value">Active Development</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Lines of Code:</span>
+                    <span class="status-value">~850 (scripts) + extensive configuration YAML/Markdown</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Specialized Agents:</span>
+                    <span class="status-value">13+</span>
+                </div>
+            </div>
+        </footer>
+    </article>
+</body>
+</html>
